@@ -1,0 +1,161 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 760" font-family="Inter, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#374151"/>
+    </marker>
+    <style>
+      .title { font-size: 22px; font-weight: 700; fill: #111827; }
+      .subtitle { font-size: 13px; fill: #6b7280; }
+      .vpc { fill: none; stroke: #1f2937; stroke-width: 2; stroke-dasharray: 6 4; }
+      .az-label { font-size: 12px; font-weight: 600; fill: #6b7280; letter-spacing: 0.5px; }
+      .subnet-public { fill: #ecfdf5; stroke: #10b981; stroke-width: 1.5; }
+      .subnet-app { fill: #eff6ff; stroke: #3b82f6; stroke-width: 1.5; }
+      .subnet-db { fill: #fef3c7; stroke: #f59e0b; stroke-width: 1.5; }
+      .subnet-label { font-size: 11px; font-weight: 600; fill: #374151; }
+      .component { fill: #ffffff; stroke: #374151; stroke-width: 1.5; rx: 6; }
+      .component-label { font-size: 12px; font-weight: 600; fill: #111827; text-anchor: middle; }
+      .component-sub { font-size: 10px; fill: #6b7280; text-anchor: middle; }
+      .flow { stroke: #374151; stroke-width: 2; fill: none; }
+      .flow-label { font-size: 10px; fill: #4b5563; font-weight: 500; }
+      .legend-title { font-size: 11px; font-weight: 700; fill: #111827; }
+      .legend-text { font-size: 10px; fill: #374151; }
+    </style>
+  </defs>
+
+  <!-- Title -->
+  <text x="40" y="36" class="title">3-Tier AWS Architecture</text>
+  <text x="40" y="56" class="subtitle">Highly available web application across two Availability Zones, provisioned with Terraform</text>
+
+  <!-- Internet user -->
+  <g transform="translate(40,150)">
+    <circle cx="20" cy="20" r="18" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+    <text x="20" y="24" class="component-label">User</text>
+    <text x="20" y="55" class="component-sub">Internet</text>
+  </g>
+
+  <!-- Arrow user -> IGW -->
+  <line x1="80" y1="170" x2="155" y2="170" class="flow" marker-end="url(#arrow)"/>
+  <text x="90" y="162" class="flow-label">HTTPS / HTTP</text>
+
+  <!-- Internet Gateway -->
+  <g transform="translate(160,150)">
+    <rect width="80" height="40" class="component"/>
+    <text x="40" y="18" class="component-label">IGW</text>
+    <text x="40" y="32" class="component-sub">Internet Gateway</text>
+  </g>
+
+  <!-- VPC outer box -->
+  <rect x="260" y="100" width="780" height="600" class="vpc" rx="10"/>
+  <text x="275" y="125" font-size="13" font-weight="700" fill="#111827">VPC  (10.0.0.0/16)</text>
+
+  <!-- AZ A and AZ B vertical divider -->
+  <line x1="660" y1="140" x2="660" y2="680" stroke="#d1d5db" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="430" y="148" class="az-label">Availability Zone A  (us-east-1a)</text>
+  <text x="780" y="148" class="az-label">Availability Zone B  (us-east-1b)</text>
+
+  <!-- ============================================ -->
+  <!-- TIER 1: Public Subnets -->
+  <!-- ============================================ -->
+  <!-- Public subnet AZ-A -->
+  <rect x="280" y="170" width="360" height="120" class="subnet-public" rx="6"/>
+  <text x="295" y="190" class="subnet-label">Public Subnet  (10.0.1.0/24)</text>
+
+  <!-- Public subnet AZ-B -->
+  <rect x="680" y="170" width="340" height="120" class="subnet-public" rx="6"/>
+  <text x="695" y="190" class="subnet-label">Public Subnet  (10.0.2.0/24)</text>
+
+  <!-- ALB spans both public subnets -->
+  <rect x="430" y="210" width="440" height="60" class="component"/>
+  <text x="650" y="232" class="component-label">Application Load Balancer (ALB)</text>
+  <text x="650" y="252" class="component-sub">HTTP listener  -  Target group  -  Health checks</text>
+
+  <!-- NAT Gateway in AZ-A public subnet -->
+  <rect x="295" y="215" width="110" height="50" class="component"/>
+  <text x="350" y="235" class="component-label">NAT GW</text>
+  <text x="350" y="252" class="component-sub">Elastic IP</text>
+
+  <!-- IGW -> public subnet arrow -->
+  <line x1="240" y1="170" x2="280" y2="170" class="flow" marker-end="url(#arrow)"/>
+
+  <!-- ============================================ -->
+  <!-- TIER 2: Private App Subnets -->
+  <!-- ============================================ -->
+  <rect x="280" y="320" width="360" height="160" class="subnet-app" rx="6"/>
+  <text x="295" y="340" class="subnet-label">Private App Subnet  (10.0.11.0/24)</text>
+
+  <rect x="680" y="320" width="340" height="160" class="subnet-app" rx="6"/>
+  <text x="695" y="340" class="subnet-label">Private App Subnet  (10.0.12.0/24)</text>
+
+  <!-- EC2 instances (ASG) AZ-A -->
+  <rect x="320" y="360" width="120" height="50" class="component"/>
+  <text x="380" y="382" class="component-label">EC2 (ASG)</text>
+  <text x="380" y="398" class="component-sub">Amazon Linux 2023</text>
+
+  <rect x="470" y="360" width="120" height="50" class="component"/>
+  <text x="530" y="382" class="component-label">EC2 (ASG)</text>
+  <text x="530" y="398" class="component-sub">Amazon Linux 2023</text>
+
+  <!-- EC2 instances (ASG) AZ-B -->
+  <rect x="720" y="360" width="120" height="50" class="component"/>
+  <text x="780" y="382" class="component-label">EC2 (ASG)</text>
+  <text x="780" y="398" class="component-sub">Amazon Linux 2023</text>
+
+  <rect x="870" y="360" width="120" height="50" class="component"/>
+  <text x="930" y="382" class="component-label">EC2 (ASG)</text>
+  <text x="930" y="398" class="component-sub">Amazon Linux 2023</text>
+
+  <!-- ASG label band -->
+  <rect x="320" y="425" width="670" height="40" fill="#dbeafe" stroke="#3b82f6" stroke-width="1" rx="4"/>
+  <text x="655" y="448" class="component-label" font-size="12">Auto Scaling Group  (min: 2, desired: 2, max: 4)  -  Launch Template  -  IMDSv2 required</text>
+
+  <!-- ============================================ -->
+  <!-- TIER 3: Private DB Subnets -->
+  <!-- ============================================ -->
+  <rect x="280" y="510" width="360" height="140" class="subnet-db" rx="6"/>
+  <text x="295" y="530" class="subnet-label">Private DB Subnet  (10.0.21.0/24)</text>
+
+  <rect x="680" y="510" width="340" height="140" class="subnet-db" rx="6"/>
+  <text x="695" y="530" class="subnet-label">Private DB Subnet  (10.0.22.0/24)</text>
+
+  <!-- RDS primary (AZ-A) -->
+  <rect x="380" y="555" width="180" height="60" class="component"/>
+  <text x="470" y="578" class="component-label">RDS  -  Primary</text>
+  <text x="470" y="595" class="component-sub">MySQL 8.0  -  encrypted</text>
+
+  <!-- RDS standby (AZ-B) -->
+  <rect x="760" y="555" width="180" height="60" class="component"/>
+  <text x="850" y="578" class="component-label">RDS  -  Standby</text>
+  <text x="850" y="595" class="component-sub">Multi-AZ replica</text>
+
+  <!-- Replication arrow between RDS primary and standby -->
+  <line x1="560" y1="585" x2="760" y2="585" class="flow" stroke-dasharray="4 4" marker-end="url(#arrow)"/>
+  <text x="610" y="578" class="flow-label">Synchronous replication</text>
+
+  <!-- ============================================ -->
+  <!-- Traffic flow arrows -->
+  <!-- ============================================ -->
+  <!-- ALB -> EC2 instances -->
+  <line x1="600" y1="270" x2="450" y2="360" class="flow" marker-end="url(#arrow)"/>
+  <line x1="700" y1="270" x2="780" y2="360" class="flow" marker-end="url(#arrow)"/>
+
+  <!-- EC2 -> RDS -->
+  <line x1="450" y1="410" x2="470" y2="555" class="flow" marker-end="url(#arrow)"/>
+  <line x1="800" y1="410" x2="850" y2="555" class="flow" marker-end="url(#arrow)"/>
+
+  <!-- EC2 -> NAT for outbound -->
+  <line x1="380" y1="360" x2="355" y2="265" class="flow" stroke-dasharray="3 3" marker-end="url(#arrow)"/>
+  <text x="200" y="320" class="flow-label">Outbound only via NAT</text>
+
+  <!-- ============================================ -->
+  <!-- Legend -->
+  <!-- ============================================ -->
+  <g transform="translate(40,690)">
+    <text x="0" y="0" class="legend-title">Tiers</text>
+    <rect x="50" y="-10" width="16" height="12" class="subnet-public"/>
+    <text x="72" y="0" class="legend-text">Web / Public</text>
+    <rect x="160" y="-10" width="16" height="12" class="subnet-app"/>
+    <text x="182" y="0" class="legend-text">App / Private</text>
+    <rect x="280" y="-10" width="16" height="12" class="subnet-db"/>
+    <text x="302" y="-0" class="legend-text">Database / Private isolated</text>
+  </g>
+</svg>
