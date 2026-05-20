@@ -116,11 +116,13 @@ The infrastructure was deployed end-to-end and validated before being destroyed 
 
 ![ALB DNS](docs/screenshots/05_alb-DNS.png)
 
-### Load balancing across instances az-1a
+### Load balancing across instances 
+
+**1. az-1a**
 
 ![Load balancing across instances](docs/screenshots/07_alb-load-balancing-1a.png)
 
-### Load balancing across instances az-1b
+**2. az-1b**
 
 ![Load balancing across instances](docs/screenshots/08_alb-load-balancing-1b.png)
 
