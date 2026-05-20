@@ -114,26 +114,52 @@ make destroy
 
 The infrastructure was deployed end-to-end and validated before being destroyed to control costs.
 
-### Terraform apply output
+## Terraform apply Output
+
 ![Terraform apply](docs/screenshots/01-terraform-apply.png)
 
-### Network topology (VPC resource map)
+## Network Layer 
+
+### VPC Resource Map
+
 ![VPC resource map](docs/screenshots/01_vpc-resource-map.png)
 
-### Security boundaries
+## Security Boundaries
+
+### Security Groups
+
 ![Security groups](docs/screenshots/02_security_groups.png)
 
-### Application served by ALB across two AZs
+## Web Layer
+
+### ALB DNS
+
 ![ALB DNS](docs/screenshots/05_alb-DNS.png)
+
+### Load balancing across instances (az-1a, az-1b)
+
 ![Load balancing across instances](docs/screenshots/07_alb-load-balancing-1a.png)
+
 ![Load balancing across instances](docs/screenshots/08_alb-load-balancing-1b.png)
 
-### Compute tier
+## Compute Layer
+
+### ASG Capacity
+
 ![Auto Scaling Group](docs/screenshots/06_asg-capacity.png)
+
+### EC2 Instances Across AZs
+
 ![EC2 instances across AZs](docs/screenshots/03_ec2_instances.png)
+
+### Registered Healthy Targets
+
 ![Target group health](docs/screenshots/04_target-group-health.png)
 
-### Database tier
+## Database tier
+
+### DB Instance 
+
 ![RDS instance](docs/screenshots/09_rds-instance.png)
 
 ---
