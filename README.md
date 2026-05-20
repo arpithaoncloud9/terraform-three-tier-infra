@@ -96,7 +96,7 @@ The infrastructure was deployed end-to-end and validated before being destroyed 
 
 ## Terraform apply Output:
 
-![Terraform apply](docs/screenshots/08_terraform-apply-successful.pngterr)
+![Terraform apply](docs/screenshots/08_terraform-apply-successful.png)
 
 ## Network Layer: 
 
