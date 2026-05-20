@@ -47,7 +47,7 @@ resource "aws_db_instance" "this" {
   instance_class = var.db_instance_class
 
   allocated_storage     = 20
-  max_allocated_storage = 100
+  max_allocated_storage = 20
   storage_type          = "gp3"
   storage_encrypted     = true
 
@@ -60,9 +60,9 @@ resource "aws_db_instance" "this" {
   vpc_security_group_ids = [aws_security_group.db.id]
   publicly_accessible    = false
 
-  multi_az = true
+  multi_az = var.multi_az
 
-  backup_retention_period = 7
+  backup_retention_period = var.backup_retention_period
   backup_window           = "03:00-04:00"
   maintenance_window      = "Mon:04:00-Mon:05:00"
 

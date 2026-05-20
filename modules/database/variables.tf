@@ -54,3 +54,15 @@ variable "db_password" {
   type        = string
   sensitive   = true
 }
+
+variable "multi_az" {
+  description = "Enable Multi-AZ deployment. Set to false on AWS Free Plan / Free Tier accounts."
+  type        = bool
+  default     = false
+}
+
+variable "backup_retention_period" {
+  description = "Number of days to retain automated backups. Set to 0 on Free Plan; 7+ in production."
+  type        = number
+  default     = 0
+}

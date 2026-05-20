@@ -59,15 +59,103 @@ locals {
     dnf install -y httpd
     systemctl enable httpd
     systemctl start httpd
-    INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
-    AZ=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)
+
+    # IMDSv2: request a token first, then use it for every metadata call
+    TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" \
+      -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+
+    INSTANCE_ID=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" \
+      http://169.254.169.254/latest/meta-data/instance-id)
+
+    AZ=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" \
+      http://169.254.169.254/latest/meta-data/placement/availability-zone)
+
     cat > /var/www/html/index.html <<HTML
-    <html>
-      <head><title>${var.project_name} - ${var.environment}</title></head>
-      <body style="font-family: sans-serif; padding: 2rem;">
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <title>3-Tier AWS Architecture — Maria</title>
+      <style>
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          margin: 0;
+          padding: 0;
+          background: linear-gradient(135deg, #1e3a8a 0%, #5b21b6 100%);
+          color: #fff;
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .container {
+          max-width: 720px;
+          padding: 3rem 2rem;
+          text-align: center;
+        }
+        h1 {
+          font-size: 2.5rem;
+          margin: 0 0 0.5rem;
+          letter-spacing: -0.02em;
+        }
+        .subtitle {
+          font-size: 1.1rem;
+          opacity: 0.85;
+          margin: 0 0 2rem;
+        }
+        .card {
+          background: rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 12px;
+          padding: 1.5rem;
+          margin: 1.5rem 0;
+          font-family: "SF Mono", Menlo, monospace;
+          font-size: 0.95rem;
+        }
+        .card-label {
+          opacity: 0.7;
+          font-size: 0.75rem;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          margin-bottom: 0.5rem;
+        }
+        .card-value {
+          font-size: 1.1rem;
+          font-weight: 600;
+        }
+        .footer {
+          margin-top: 2rem;
+          font-size: 0.85rem;
+          opacity: 0.7;
+        }
+        a {
+          color: #fff;
+          text-decoration: underline;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
         <h1>3-Tier AWS Architecture</h1>
-        <p>Served by instance <strong>$INSTANCE_ID</strong> in AZ <strong>$AZ</strong></p>
-      </body>
+        <p class="subtitle">Built by Maria · Provisioned with Terraform</p>
+
+        <div class="card">
+          <div class="card-label">Served by EC2 instance</div>
+          <div class="card-value">$INSTANCE_ID</div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">Availability Zone</div>
+          <div class="card-value">$AZ</div>
+        </div>
+
+        <p class="footer">
+          Refresh this page to see traffic balanced across two AZs.<br>
+          Code: <a href="https://github.com/arpithaoncloud9/terraform-three-tier-infra">github.com/arpithaoncloud9</a>
+        </p>
+      </div>
+    </body>
     </html>
     HTML
   EOF
@@ -115,6 +203,16 @@ resource "aws_autoscaling_group" "app" {
   launch_template {
     id      = aws_launch_template.app.id
     version = "$Latest"
+  }
+
+  # NEW: automatically roll instances when the launch template changes
+  instance_refresh {
+    strategy = "Rolling"
+    preferences {
+      min_healthy_percentage = 50
+      instance_warmup        = 60
+    }
+    triggers = ["launch_template"]
   }
 
   tag {

@@ -115,3 +115,15 @@ variable "db_password" {
   type        = string
   sensitive   = true
 }
+
+variable "multi_az" {
+  description = "Enable RDS Multi-AZ. Free Plan accounts must set this to false."
+  type        = bool
+  default     = false
+}
+
+variable "backup_retention_period" {
+  description = "RDS automated backup retention in days. Free Plan = 0."
+  type        = number
+  default     = 0
+}

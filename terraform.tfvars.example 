@@ -28,3 +28,7 @@ db_instance_class = "db.t3.micro"
 db_name           = "appdb"
 db_username       = "admin"
 db_password       = "CHANGE_ME_STRONG_PASSWORD"
+
+# Free Plan accounts must keep these as defaults
+multi_az                = false
+backup_retention_period = 0

@@ -53,6 +53,9 @@ module "compute" {
 module "database" {
   source = "./modules/database"
 
+  # ... existing lines ...
+
+ 
   project_name          = var.project_name
   environment           = var.environment
   vpc_id                = module.vpc.vpc_id
@@ -64,4 +67,6 @@ module "database" {
   db_name               = var.db_name
   db_username           = var.db_username
   db_password           = var.db_password
+  multi_az                = var.multi_az
+  backup_retention_period = var.backup_retention_period
 }
