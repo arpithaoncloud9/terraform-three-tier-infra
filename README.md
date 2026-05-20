@@ -120,7 +120,7 @@ The infrastructure was deployed end-to-end and validated before being destroyed 
 
 **az-1a and az-1b**
 
-![Load balancing across instances](07_alb-load-distribution-1a-1b.png)
+![Load balancing across instances](docs/screenshots/07_alb-load-distribution-1a-1b.png)
 
 ## Compute Layer:
 
