@@ -32,26 +32,6 @@ Everything is deployed across **two Availability Zones** for high availability a
 
 ---
 
-## Repository Structure
-
-├── .github/workflows/        # CI pipeline (fmt, validate, plan on PR)
-├── docs/                     # Architecture diagram and screenshots
-├── modules/
-│   ├── vpc/                  # VPC, subnets, IGW, NAT GW, route tables
-│   ├── alb/                  # Application Load Balancer + target group
-│   ├── compute/              # Launch Template + Auto Scaling Group
-│   └── database/             # RDS + subnet group + security group
-├── main.tf                   # Root module - composes the children
-├── variables.tf              # Root input variables
-├── outputs.tf                # Root outputs
-├── versions.tf               # Terraform + provider version pinning
-├── backend.tf                # S3 + DynamoDB remote backend (commented)
-├── terraform.tfvars.example  # Example variable values
-├── Makefile                  # make init / plan / apply / destroy
-└── README.md
-
----
-
 ## Features
 
 - **High availability** across two Availability Zones for every tier
@@ -114,35 +94,37 @@ make destroy
 
 The infrastructure was deployed end-to-end and validated before being destroyed to control costs.
 
-## Terraform apply Output
+## Terraform apply Output:
 
 ![Terraform apply](docs/screenshots/01-terraform-apply.png)
 
-## Network Layer 
+## Network Layer: 
 
 ### VPC Resource Map
 
 ![VPC resource map](docs/screenshots/01_vpc-resource-map.png)
 
-## Security Boundaries
+## Security Boundaries:
 
-### Security Groups
+### Security Groups 
 
 ![Security groups](docs/screenshots/02_security_groups.png)
 
-## Web Layer
+## Web Layer:
 
 ### ALB DNS
 
 ![ALB DNS](docs/screenshots/05_alb-DNS.png)
 
-### Load balancing across instances (az-1a, az-1b)
+### Load balancing across instances az-1a
 
 ![Load balancing across instances](docs/screenshots/07_alb-load-balancing-1a.png)
 
+### Load balancing across instances az-1b
+
 ![Load balancing across instances](docs/screenshots/08_alb-load-balancing-1b.png)
 
-## Compute Layer
+## Compute Layer:
 
 ### ASG Capacity
 
@@ -156,7 +138,7 @@ The infrastructure was deployed end-to-end and validated before being destroyed 
 
 ![Target group health](docs/screenshots/04_target-group-health.png)
 
-## Database tier
+## Database tier:
 
 ### DB Instance 
 
