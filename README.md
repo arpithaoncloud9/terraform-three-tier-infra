@@ -1,5 +1,6 @@
 # terraform-three-tier-infra
 
+# WEEK 1
 Production-style 3-tier AWS architecture provisioned end-to-end with Terraform — VPC, ALB, Auto Scaling Group, and RDS — using a modular, real-world layout.
 
 ![Architecture diagram](docs/architecture.svg)
@@ -170,19 +171,111 @@ Always run `make destroy` between test sessions.
 
 ---
 
-## What I Would Add Next
-
-- HTTPS on the ALB using ACM + Route 53
-- One NAT Gateway per AZ for true production HA
-- CloudWatch alarms on ASG and RDS, surfaced via SNS
-- Bastion-less SSH using AWS Systems Manager Session Manager
-- Move DB credentials from tfvars to AWS Secrets Manager
-
----
-
 ## License
 
 MIT
 
 
+# WEEK 2 - Remote State Management
+
+Terraform state is stored remotely in S3 with DynamoDB locking to support
+team collaboration and prevent state corruption.
+
+## Why Remote State?
+
+By default, Terraform stores state locally in `terraform.tfstate`. This works
+for solo projects but breaks immediately in a team or CI environment — two
+engineers running `apply` simultaneously will corrupt each other's state.
+
+This project uses:
+- **S3** as the single source of truth for state storage (with versioning, so
+  every change is recoverable)
+- **DynamoDB** for state locking — prevents concurrent applies from running at
+  the same time
+
+## Bootstrap (One-Time Manual Setup)
+
+The S3 bucket and DynamoDB table cannot be managed by Terraform itself
+(chicken-and-egg problem). Create them once manually before running
+`terraform init`:
+
+```bash
+# Create S3 bucket
+
+aws s3api create-bucket \
+  --bucket <your-bucket-name> \
+  --region us-east-1
+
+# Enable versioning
+
+aws s3api put-bucket-versioning \
+  --bucket <your-bucket-name> \
+  --versioning-configuration Status=Enabled
+
+# Block public access
+
+aws s3api put-public-access-block \
+  --bucket <your-bucket-name> \
+  --public-access-block-configuration \
+    "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
+
+# Create DynamoDB lock table
+
+aws dynamodb create-table \
+  --table-name terraform-state-lock \
+  --attribute-definitions AttributeName=LockID,AttributeType=S \
+  --key-schema AttributeName=LockID,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST \
+  --region us-east-1
+```
+
+## Activate the Backend
+
+Update `backend.tf` with your bucket name, then run:
+
+```bash
+terraform init -migrate-state
+```
+
+Terraform will prompt you to confirm the migration. Type `yes`. After this,
+state lives in S3 — your local `terraform.tfstate` is no longer the source
+of truth.
+
+## Backend Configuration
+
+See [`backend.tf`](./backend.tf) for the full configuration.
+
+```hcl
+terraform {
+  backend "s3" {
+    bucket         = "your-bucket-name"
+    key            = "aws-3tier-architecture/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "terraform-state-lock"
+    encrypt        = true
+  }
+}
+```
+
+## Verification
+
+After running `terraform init -migrate-state`, verify the state file landed
+in S3:
+
+```bash
+aws s3 ls s3://<your-bucket-name>/aws-3tier-architecture/
+```
+
+You should see `terraform.tfstate` listed. Run `terraform plan` to confirm
+state integrity — output should reflect your current infrastructure with no
+unexpected changes.
+
+## Screenshots
+
+| Resource | Details |
+|----------|---------|
+| ![S3 bucket](docs/screenshots/s3-bucket.png) | State bucket in us-east-1 with versioning enabled |
+| ![DynamoDB lock table](docs/screenshots/dynamodb-lock-table.png) | `terraform-state-lock` table — Active, LockID partition key |
+| ![terraform init -migrate-state](docs/screenshots/backend-migration.png) | Backend migration — `Successfully configured the backend 's3'`|
+| ![State file in S3](docs/screenshots/s3-state-file.png) | `terraform.tfstate` stored under `aws-3tier-architecture/` |
 

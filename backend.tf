@@ -16,12 +16,13 @@
 #
 # Uncomment and update the values below to enable remote state.
 
-# terraform {
-#   backend "s3" {
-#     bucket         = "your-terraform-state-bucket"
-#     key            = "aws-3tier-architecture/terraform.tfstate"
-#     region         = "us-east-1"
-#     dynamodb_table = "terraform-state-lock"
-#     encrypt        = true
-#   }
-# }
+
+terraform {
+  backend "s3" {
+    bucket         = "maria-arpitha-tf-state-three-tier"
+    key            = "aws-3tier-architecture/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "terraform-state-lock"
+    encrypt        = true
+  }
+}
