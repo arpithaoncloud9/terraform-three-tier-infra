@@ -55,18 +55,18 @@ module "database" {
 
   # ... existing lines ...
 
- 
-  project_name          = var.project_name
-  environment           = var.environment
-  vpc_id                = module.vpc.vpc_id
-  private_db_subnet_ids = module.vpc.private_db_subnet_ids
-  app_security_group_id = module.compute.app_security_group_id
-  db_engine             = var.db_engine
-  db_engine_version     = var.db_engine_version
-  db_instance_class     = var.db_instance_class
-  db_name               = var.db_name
-  db_username           = var.db_username
-  db_password           = var.db_password
+
+  project_name            = var.project_name
+  environment             = var.environment
+  vpc_id                  = module.vpc.vpc_id
+  private_db_subnet_ids   = module.vpc.private_db_subnet_ids
+  app_security_group_id   = module.compute.app_security_group_id
+  db_engine               = var.db_engine
+  db_engine_version       = var.db_engine_version
+  db_instance_class       = var.db_instance_class
+  db_name                 = var.db_name
+  db_username             = var.db_username
+  db_password             = var.db_password
   multi_az                = var.multi_az
   backup_retention_period = var.backup_retention_period
 }
