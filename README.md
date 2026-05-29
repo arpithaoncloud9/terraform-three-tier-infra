@@ -334,7 +334,6 @@ Sensitive values are stored as GitHub repository secrets, never hardcoded in cod
 | `TF_VAR_db_username` | RDS master username |
 | `TF_VAR_db_password` | RDS master password |
 
-**GitHub Secrets configured**
 ![Secrets](docs/screenshots/week3-secrets.png)
 
 
@@ -345,13 +344,14 @@ Sensitive values are stored as GitHub repository secrets, never hardcoded in cod
 ## Terraform Plan posted as PR comment
 ![Plan on PR](docs/screenshots/week3-plan-pr.png)
 
+
+## PR merged — Terraform Apply triggered automatically
+![Merge Success](docs/screenshots/week3-pr-merge-success.png)
+
+
 ## Result
 
 After merging the PR, the Apply job ran automatically and provisioned the full 3-tier infrastructure:
-
-
-![Merge Success](docs/screenshots/week3-pr-merge-success.png)
-
 
 ![Apply Success](docs/screenshots/week3-apply-success.png)
 
