@@ -279,3 +279,91 @@ unexpected changes.
 | ![terraform init -migrate-state](docs/screenshots/backend-migration.png) | Backend migration — `Successfully configured the backend 's3'`|
 | ![State file in S3](docs/screenshots/s3-state-file.png) | `terraform.tfstate` stored under `aws-3tier-architecture/` |
 
+---
+
+# Week 3 — CI/CD Pipeline with GitHub Actions
+
+## What I Did
+
+Set up a fully automated CI/CD pipeline using GitHub Actions so that Terraform never runs manually from a laptop again.
+
+Two workflows run automatically inside `.github/workflows/terraform.yaml`:
+
+- **On every Pull Request → `terraform plan`** — formats check, validates config, runs a plan, and posts the output as a PR comment so you can review exactly what will change before it hits AWS
+- **On merge to main → `terraform apply`** — automatically provisions the infrastructure on AWS
+
+## How It Works
+
+```
+Developer pushes code to a feature branch
+           │
+    Opens Pull Request
+           │
+    GitHub Actions triggers:
+      ✅ terraform fmt -check   (is the code formatted correctly?)
+      ✅ terraform validate     (is the syntax valid?)
+      ✅ terraform plan         (what will change on AWS?)
+      📝 Plan posted as PR comment
+           │
+    Review the plan → merge when happy
+           │
+    GitHub Actions triggers:
+      🚀 terraform apply        (29 resources created on AWS automatically)
+```
+
+## Why It's Important
+
+Before CI/CD, the risk with Terraform is that anyone can run `terraform apply` from their laptop at any time — even with untested or broken code. In a team, two people could run apply at the same time and corrupt the state file.
+
+This pipeline solves three real problems:
+
+**1. Visibility** — the plan-as-PR-comment means you see *exactly* what Terraform will create, change, or destroy before it happens. No surprises.
+
+**2. Safety** — the `fmt` and `validate` checks catch formatting errors and syntax issues automatically. Bad code never reaches AWS.
+
+**3. Consistency** — infrastructure changes only happen through the pipeline. No one applies from their local machine. Every change is traceable to a commit and a PR.
+
+## GitHub Secrets Used
+
+Sensitive values are stored as GitHub repository secrets, never hardcoded in code:
+
+| Secret | Purpose |
+|---|---|
+| `AWS_ACCESS_KEY_ID` | Authenticate to AWS |
+| `AWS_SECRET_ACCESS_KEY` | Authenticate to AWS |
+| `TF_VAR_db_username` | RDS master username |
+| `TF_VAR_db_password` | RDS master password |
+
+**GitHub Secrets configured**
+![Secrets](docs/screenshots/week3-secrets.png)
+
+
+## Feature branch pushed — Compare & pull request
+![Branch Push](docs/screenshots/week3-branch-push.png)
+
+
+## Terraform Plan posted as PR comment
+![Plan on PR](docs/screenshots/week3-plan-pr.png)
+
+## Result
+
+After merging the PR, the Apply job ran automatically and provisioned the full 3-tier infrastructure:
+
+
+![Merge Success](docs/screenshots/week3-pr-merge-success.png)
+
+
+![Apply Success](docs/screenshots/week3-apply-success.png)
+
+```
+Apply complete! Resources: 29 added, 0 changed, 0 destroyed.
+
+Outputs:
+  alb_dns_name = "aws-3tier-dev-alb-2117024030.us-east-1.elb.amazonaws.com"
+  asg_name     = "aws-3tier-dev-asg"
+  vpc_id       = "vpc-05a54d76a457b969e"
+```
+
+29 AWS resources — VPC, subnets, ALB, ASG, RDS, security groups — created automatically with zero manual steps.
+
+---
