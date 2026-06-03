@@ -11,7 +11,6 @@ locals {
 }
 
 # SSH Key Pair
-
 resource "tls_private_key" "app_key" {
   algorithm = "RSA"
   rsa_bits  = 4096
@@ -31,7 +30,6 @@ resource "local_file" "app_key" {
   content         = tls_private_key.app_key.private_key_pem
   file_permission = "0400"
 }
-
 
 data "aws_ami" "al2023" {
   most_recent = true
@@ -146,15 +144,12 @@ locals {
 }
 
 resource "aws_launch_template" "app" {
-  name_prefix   = "${var.project_name}-${var.environment}-lt-"
-  image_id      = data.aws_ami.al2023.id
-  instance_type = var.instance_type
-
-  key_name = aws_key_pair.app_key.key_name
-
+  name_prefix            = "${var.project_name}-${var.environment}-lt-"
+  image_id               = data.aws_ami.al2023.id
+  instance_type          = var.instance_type
+  key_name               = aws_key_pair.app_key.key_name
   vpc_security_group_ids = [aws_security_group.app.id]
-
-  user_data = base64encode(local.user_data)
+  user_data              = base64encode(local.user_data)
 
   metadata_options {
     http_tokens                 = "required"
@@ -196,7 +191,7 @@ resource "aws_autoscaling_group" "app" {
   }
 
   # NEW: automatically roll instances when the launch template changes
-  
+
   instance_refresh {
     strategy = "Rolling"
     preferences {
