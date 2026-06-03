@@ -147,7 +147,7 @@ resource "aws_launch_template" "app" {
   name_prefix            = "${var.project_name}-${var.environment}-lt-"
   image_id               = data.aws_ami.al2023.id
   instance_type          = var.instance_type
-  key_name = aws_key_pair.app_key.key_name
+  key_name               = aws_key_pair.app_key.key_name
   vpc_security_group_ids = [aws_security_group.app.id]
   user_data              = base64encode(local.user_data)
 
