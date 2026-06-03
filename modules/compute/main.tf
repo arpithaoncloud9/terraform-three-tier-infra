@@ -166,8 +166,9 @@ resource "aws_launch_template" "app" {
   }
 
   iam_instance_profile {
-    arn = aws_iam_instance_profile.ec2_profile.arn
+  arn = "arn:aws:iam::120300897885:instance-profile/${aws_iam_instance_profile.ec2_profile.name}"
   }
+
 
   tag_specifications {
     resource_type = "instance"
