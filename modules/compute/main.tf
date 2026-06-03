@@ -10,6 +10,29 @@ locals {
   }
 }
 
+# SSH Key Pair
+
+resource "tls_private_key" "app_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "aws_key_pair" "app_key" {
+  key_name   = "${var.project_name}-${var.environment}-key"
+  public_key = tls_private_key.app_key.public_key_openssh
+
+  tags = merge(local.common_tags, {
+    Name = "${var.project_name}-${var.environment}-key"
+  })
+}
+
+resource "local_file" "app_key" {
+  filename        = "${path.module}/${var.project_name}-${var.environment}-key.pem"
+  content         = tls_private_key.app_key.private_key_pem
+  file_permission = "0400"
+}
+
+
 data "aws_ami" "al2023" {
   most_recent = true
   owners      = ["amazon"]
@@ -127,6 +150,8 @@ resource "aws_launch_template" "app" {
   image_id      = data.aws_ami.al2023.id
   instance_type = var.instance_type
 
+  key_name = aws_key_pair.app_key.key_name
+
   vpc_security_group_ids = [aws_security_group.app.id]
 
   user_data = base64encode(local.user_data)
@@ -163,7 +188,7 @@ resource "aws_autoscaling_group" "app" {
   vpc_zone_identifier       = var.private_app_subnet_ids
   target_group_arns         = [var.target_group_arn]
   health_check_type         = "ELB"
-  health_check_grace_period = 60
+  health_check_grace_period = 300 # Changed from 60 to 300 seconds
 
   launch_template {
     id      = aws_launch_template.app.id
@@ -171,6 +196,7 @@ resource "aws_autoscaling_group" "app" {
   }
 
   # NEW: automatically roll instances when the launch template changes
+  
   instance_refresh {
     strategy = "Rolling"
     preferences {
