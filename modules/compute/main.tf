@@ -10,6 +10,26 @@ locals {
   }
 }
 
+# SSH Key Pair
+resource "tls_private_key" "app_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "aws_key_pair" "app_key" {
+  key_name   = "${var.project_name}-${var.environment}-key"
+  public_key = tls_private_key.app_key.public_key_openssh
+
+  tags = merge(local.common_tags, {
+    Name = "${var.project_name}-${var.environment}-key"
+  })
+}
+
+resource "local_file" "app_key" {
+  filename        = "${path.module}/${var.project_name}-${var.environment}-key.pem"
+  content         = tls_private_key.app_key.private_key_pem
+  file_permission = "0400"
+}
 
 data "aws_ami" "al2023" {
   most_recent = true
@@ -127,7 +147,7 @@ resource "aws_launch_template" "app" {
   name_prefix            = "${var.project_name}-${var.environment}-lt-"
   image_id               = data.aws_ami.al2023.id
   instance_type          = var.instance_type
-  key_name               = var.key_pair_name
+  key_name = aws_key_pair.app_key.key_name
   vpc_security_group_ids = [aws_security_group.app.id]
   user_data              = base64encode(local.user_data)
 

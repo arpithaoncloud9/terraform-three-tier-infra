@@ -47,8 +47,3 @@ variable "asg_desired_capacity" {
   description = "Desired number of instances in the ASG."
   type        = number
 }
-
-variable "key_pair_name" {
-  description = "Name of the SSH key pair"
-  type        = string
-}
