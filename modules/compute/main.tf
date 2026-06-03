@@ -124,12 +124,12 @@ locals {
 }
 
 resource "aws_launch_template" "app" {
-  name_prefix   = "${var.project_name}-${var.environment}-lt-"
-  image_id      = data.aws_ami.al2023.id
-  instance_type = var.instance_type
-  key_name = var.key_pair_name
+  name_prefix            = "${var.project_name}-${var.environment}-lt-"
+  image_id               = data.aws_ami.al2023.id
+  instance_type          = var.instance_type
+  key_name               = var.key_pair_name
   vpc_security_group_ids = [aws_security_group.app.id]
-  user_data = base64encode(local.user_data)
+  user_data              = base64encode(local.user_data)
 
   metadata_options {
     http_tokens                 = "required"
@@ -171,7 +171,7 @@ resource "aws_autoscaling_group" "app" {
   }
 
   # NEW: automatically roll instances when the launch template changes
-  
+
   instance_refresh {
     strategy = "Rolling"
     preferences {
