@@ -48,6 +48,7 @@ module "compute" {
   asg_min_size           = var.asg_min_size
   asg_max_size           = var.asg_max_size
   asg_desired_capacity   = var.asg_desired_capacity
+  key_pair_name          = aws_key_pair.app_key.key_name
 }
 
 module "database" {
@@ -70,3 +71,4 @@ module "database" {
   multi_az                = var.multi_az
   backup_retention_period = var.backup_retention_period
 }
+
