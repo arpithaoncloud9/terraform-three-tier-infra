@@ -51,16 +51,49 @@ resource "aws_security_group" "app" {
   })
 }
 
+# IAM role for EC2 to pull from ECR
+resource "aws_iam_role" "ec2_role" {
+  name = "${var.project_name}-${var.environment}-ec2-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "ec2.amazonaws.com" }
+    }]
+  })
+
+  tags = local.common_tags
+}
+
+resource "aws_iam_role_policy_attachment" "ecr_pull" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}
+
+resource "aws_iam_instance_profile" "ec2_profile" {
+  name = "${var.project_name}-${var.environment}-ec2-profile"
+  role = aws_iam_role.ec2_role.name
+}
+
 locals {
   user_data = <<-EOF
     #!/bin/bash
     set -e
-    dnf update -y
-    dnf install -y httpd
-    systemctl enable httpd
-    systemctl start httpd
 
-    # IMDSv2: request a token first, then use it for every metadata call
+    # Update system
+    dnf update -y
+
+    # Install Docker
+    dnf install -y docker
+    systemctl enable docker
+    systemctl start docker
+
+    # Install AWS CLI v2
+    dnf install -y aws-cli
+
+    # IMDSv2 token for metadata
     TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" \
       -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
 
@@ -70,94 +103,22 @@ locals {
     AZ=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" \
       http://169.254.169.254/latest/meta-data/placement/availability-zone)
 
-    cat > /var/www/html/index.html <<HTML
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <title>3-Tier AWS Architecture — Maria</title>
-      <style>
-        body {
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          margin: 0;
-          padding: 0;
-          background: linear-gradient(135deg, #1e3a8a 0%, #5b21b6 100%);
-          color: #fff;
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .container {
-          max-width: 720px;
-          padding: 3rem 2rem;
-          text-align: center;
-        }
-        h1 {
-          font-size: 2.5rem;
-          margin: 0 0 0.5rem;
-          letter-spacing: -0.02em;
-        }
-        .subtitle {
-          font-size: 1.1rem;
-          opacity: 0.85;
-          margin: 0 0 2rem;
-        }
-        .card {
-          background: rgba(255, 255, 255, 0.1);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          border-radius: 12px;
-          padding: 1.5rem;
-          margin: 1.5rem 0;
-          font-family: "SF Mono", Menlo, monospace;
-          font-size: 0.95rem;
-        }
-        .card-label {
-          opacity: 0.7;
-          font-size: 0.75rem;
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
-          margin-bottom: 0.5rem;
-        }
-        .card-value {
-          font-size: 1.1rem;
-          font-weight: 600;
-        }
-        .footer {
-          margin-top: 2rem;
-          font-size: 0.85rem;
-          opacity: 0.7;
-        }
-        a {
-          color: #fff;
-          text-decoration: underline;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <h1>3-Tier AWS Architecture</h1>
-        <p class="subtitle">Built by Maria · Provisioned with Terraform</p>
+    # Log into ECR using instance IAM role
+    aws ecr get-login-password --region us-east-1 | \
+      docker login --username AWS --password-stdin \
+      120300897885.dkr.ecr.us-east-1.amazonaws.com
 
-        <div class="card">
-          <div class="card-label">Served by EC2 instance</div>
-          <div class="card-value">$INSTANCE_ID</div>
-        </div>
+    # Pull image from ECR
+    docker pull 120300897885.dkr.ecr.us-east-1.amazonaws.com/aws-3tier-app:latest
 
-        <div class="card">
-          <div class="card-label">Availability Zone</div>
-          <div class="card-value">$AZ</div>
-        </div>
-
-        <p class="footer">
-          Refresh this page to see traffic balanced across two AZs.<br>
-          Code: <a href="https://github.com/arpithaoncloud9/terraform-three-tier-infra">github.com/arpithaoncloud9</a>
-        </p>
-      </div>
-    </body>
-    </html>
-    HTML
+    # Run the container
+    docker run -d \
+      --name app \
+      --restart always \
+      -p 80:3000 \
+      -e INSTANCE_ID=$INSTANCE_ID \
+      -e AZ=$AZ \
+      120300897885.dkr.ecr.us-east-1.amazonaws.com/aws-3tier-app:latest
   EOF
 }
 
@@ -175,6 +136,10 @@ resource "aws_launch_template" "app" {
     http_endpoint               = "enabled"
     http_put_response_hop_limit = 1
   }
+
+  iam_instance_profile {
+  name = aws_iam_instance_profile.ec2_profile.name
+}
 
   tag_specifications {
     resource_type = "instance"
