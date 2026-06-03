@@ -39,4 +39,4 @@ terraform.rc
 *.tfplan
 
 # Allow the example tfvars
-!terraform.tfvars.example
+!terraform.tfvars.exampleapp/node_modules/
