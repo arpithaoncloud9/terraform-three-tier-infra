@@ -116,6 +116,9 @@ locals {
     systemctl enable docker
     systemctl start docker
 
+    # Adds ec2-user to docker group
+    usermod -a -G docker ec2-user
+
     # Install AWS CLI v2
     dnf install -y aws-cli
 
