@@ -367,3 +367,210 @@ Outputs:
 29 AWS resources — VPC, subnets, ALB, ASG, RDS, security groups — created automatically with zero manual steps.
 
 ---
+
+# Week 4: Dockerize the App + Push to AWS ECR 🐳
+
+### Overview
+
+Containerized the Node.js application using Docker and integrated it with AWS ECR (Elastic Container Registry). Extended the GitHub Actions CI/CD pipeline to automatically build Docker images and push them to ECR. Updated EC2 instances to pull and run the containerized app on startup. Debugged and resolved multiple infrastructure issues to achieve a fully automated app deployment pipeline. App is now live on ALB DNS! 🎉
+
+What I Built This Week:
+
+## 1. Node.js App
+
+▸ Simple server returning an HTML webpage
+▸ Displays instance metadata (Instance ID, Availability Zone)
+▸ Listens on port 3000
+▸ Location: app/server.js
+
+![App running locally on localhost](docs/screenshots/week4-Node.js-app-running-locally.png)
+
+## 2. Dockerfile
+
+▸ Multi-stage Docker image
+▸ Based on Node.js runtime
+▸ Installs dependencies from package.json
+▸ Exposes port 3000
+▸ Location: app/Dockerfile
+
+![Docker container running successfully](docs/screenshots/week4-docker-run-successful.png)
+
+![Docker container running successfully](docs/screenshots/week4-container-image-creation.png)
+
+## 3. AWS ECR Repository 
+
+▸ Private Docker registry in AWS
+▸ Stores containerized app images
+▸ Tagged with commit hash and latest
+▸ Created via GitHub Actions automation
+
+## 4. GitHub Actions Docker Pipeline 
+
+▸ Automatically builds Docker image on push to main
+▸ Authenticates with AWS ECR
+▸ Pushes image with commit hash tag
+▸ Pushes latest tag for easy reference
+▸ File: .github/workflows/terraform.yaml
+
+![Terraform Plan PR check](docs/screenshots/week4-terraform-plan-PR.png)
+
+## 5. EC2 User Data Script Updates
+
+▸ Instances install Docker on startup
+▸ Pull image from ECR using IAM role credentials
+▸ Run container with proper port mapping (80→3000)
+▸ Pass environment variables (Instance ID, AZ)
+▸ Location: modules/compute/main.tf (user_data locals)
+
+![Docker image pushed to ECR](docs/screenshots/week4-image-build-pushed-to-ECR.png)
+
+![Image is available in ECR repository](docs/screenshots/week4-ECR-latest-image.png)
+
+## 6. IAM Configuration 
+
+▸ EC2 role with ECR read-only permissions
+▸ EC2 instances can authenticate to ECR without hardcoded credentials
+▸ SSM permissions for Session Manager access
+▸ Location: modules/compute/main.tf
+
+## 7. App Live on ALB 
+
+▸ Load balancer routing traffic to healthy targets
+▸ Instances pulling latest image from ECR
+▸ Docker container running the app
+▸ App accessible at ALB DNS name 🚀
+▸ Final result - App live!
+
+![Final result - App live](docs/screenshots/week4-EC2-pulled-docker-image-ALB.png)
+
+
+# Deployment Flow
+
+Step 1: Write Code
+  ├─ app/server.js (Node.js app)
+  ├─ app/Dockerfile (Docker image)
+  └─ Infrastructure changes (Terraform)
+       │
+Step 2: git push to feature branch
+       │
+Step 3: Create Pull Request
+       │
+Step 4: GitHub Actions runs on PR:
+       ├─ ✅ terraform fmt -check
+       ├─ ✅ terraform validate
+       ├─ ✅ terraform plan (shows what will change)
+       ├─ 📝 Posts plan as PR comment
+       └─ 🏗️ (Docker build step runs on merge only)
+       │
+Step 5: Review PR and plan
+       │
+Step 6: Merge to main
+       │
+Step 7: GitHub Actions automatically runs:
+       ├─ 🚀 terraform apply (deploys infrastructure)
+       ├─ 🐳 docker build (builds Docker image)
+       ├─ 📦 docker push (pushes image to ECR with :latest tag)
+       │
+Step 8: ASG launches new instances:
+       ├─ Instances boot
+       ├─ Docker installs
+       ├─ aws ecr get-login-password (authenticates via IAM)
+       ├─ docker pull :latest (pulls your image)
+       ├─ docker run (starts container on port 80)
+       │
+Step 9: Health checks pass
+       ├─ ALB checks port 80 ✅
+       ├─ Container responds ✅
+       └─ Target becomes Healthy ✅
+       │
+Step 10: App Live!
+       └─ ALB routes traffic → App running 🎉
+
+
+# Issues Encountered & Solutions
+
+## Issue 1: Docker Permission Denied ❌
+
+▸ Problem: docker logs app failed with permission error
+▸ Solution: Added usermod -a -G docker ec2-user to user_data script
+
+## Issue 2: IAM Role Not Attached ❌❌❌ (CRITICAL)
+
+▸ Problem: Instances had no IAM credentials to pull from ECR
+▸ Symptoms:
+
+curl http://169.254.169.254/latest/meta-data/iam/security-credentials/ returned empty
+ECR image pull failed silently
+Docker container never started
+Health checks failed
+App was unreachable
+
+▸ Root Cause: Launch template was using name instead of arn for IAM instance profile
+▸ Solution: Changed to ARN reference (this was the critical fix!)
+
+```hcl
+# ❌ This didn't work:
+iam_instance_profile {
+  name = aws_iam_instance_profile.ec2_profile.name
+}
+
+# ✅ This worked:
+iam_instance_profile {
+  arn = aws_iam_instance_profile.ec2_profile.arn
+}
+``` 
+## Issue 3: Health Check Grace Period Too Short ⚠️
+
+▸ Problem: Instances killed before Docker finished starting
+▸ Solution: Increased to 300 seconds
+
+```hcl
+health_check_grace_period = 300  # from 60 seconds
+```
+
+# Issue 4: Docker Image Not Tagged as latest ❌
+
+▸ Problem: User data pulled :latest but tag didn't exist in ECR
+▸ Symptoms:
+
+docker pull failed with "manifest not found"
+Container never started
+Instance kept getting replaced by ASG
+
+▸ Solution: Updated GitHub Actions to push both commit hash AND latest tag
+
+```yaml
+docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+```
+
+# Learnings & Lessons
+
+## Key Lessons from This Week:
+
+▸ IAM Instance Profiles: Always use arn not name in launch templates
+▸ Docker Tags: Tag images with both commit hash AND latest
+▸ Health Checks: Give instances enough time to start (300+ seconds)
+▸ Session Manager: Better than SSH for secure instance access
+▸ Metadata Queries: Always verify IAM role with: curl http://169.254.169.254/latest/meta-data/iam/security-credentials/
+▸ User Data Scripts: Test startup scripts locally before deploying
+▸ ECR Permissions: EC2 role needs AmazonEC2ContainerRegistryReadOnly      
+
+# Conclusion
+
+## You've built a production-grade containerized application with fully automated deployment!
+
+▸ Infrastructure as Code ✅
+▸ Remote state management ✅
+▸ Automated CI/CD pipeline ✅
+▸ Containerized application ✅
+▸ Zero-manual deployments ✅
+
+## Your app is now:
+
+🐳 Running in Docker containers
+🚀 Deployed automatically via GitHub Actions
+📦 Stored in AWS ECR
+⚖️ Load-balanced via ALB
+🔄 Auto-scaling across availability zones
+🎉 LIVE and accessible at your ALB DNS!
