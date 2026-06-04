@@ -461,44 +461,44 @@ What I Built This Week:
 # Deployment Flow
 
 Step 1: Write Code
-  ├─ app/server.js (Node.js app)
-  ├─ app/Dockerfile (Docker image)
-  └─ Infrastructure changes (Terraform)
-       │
+-  app/server.js (Node.js app)
+- app/Dockerfile (Docker image)
+- Infrastructure changes (Terraform)
+
 Step 2: git push to feature branch
-       │
+
 Step 3: Create Pull Request
-       │
+
 Step 4: GitHub Actions runs on PR:
-       ├─ ✅ terraform fmt -check
-       ├─ ✅ terraform validate
-       ├─ ✅ terraform plan (shows what will change)
-       ├─ 📝 Posts plan as PR comment
-       └─ 🏗️ (Docker build step runs on merge only)
-       │
+- terraform fmt -check
+- terraform validate
+- terraform plan (shows what will change)
+- Posts plan as PR comment
+- (Docker build step runs on merge only)
+
 Step 5: Review PR and plan
-       │
+
 Step 6: Merge to main
-       │
+
 Step 7: GitHub Actions automatically runs:
-       ├─ 🚀 terraform apply (deploys infrastructure)
-       ├─ 🐳 docker build (builds Docker image)
-       ├─ 📦 docker push (pushes image to ECR with :latest tag)
-       │
+- 🚀 terraform apply (deploys infrastructure)
+- 🐳 docker build (builds Docker image)
+- 📦 docker push (pushes image to ECR with :latest tag)
+
 Step 8: ASG launches new instances:
-       ├─ Instances boot
-       ├─ Docker installs
-       ├─ aws ecr get-login-password (authenticates via IAM)
-       ├─ docker pull :latest (pulls your image)
-       ├─ docker run (starts container on port 80)
-       │
+-  Instances boot
+- Docker installs
+- aws ecr get-login-password (authenticates via IAM)
+- docker pull :latest (pulls your image)
+- docker run (starts container on port 80)
+
 Step 9: Health checks pass
-       ├─ ALB checks port 80 ✅
-       ├─ Container responds ✅
-       └─ Target becomes Healthy ✅
-       │
+- ALB checks port 80 ✅
+- Container responds ✅
+- Target becomes Healthy ✅
+
 Step 10: App Live!
-       └─ ALB routes traffic → App running 🎉
+- ALB routes traffic → App running 🎉🎉
 
 
 # Issues Encountered & Solutions
