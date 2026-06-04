@@ -383,7 +383,7 @@ What I Built This Week:
 - Listens on port 3000
 - Location: app/server.js
 
-## App running locally on localhost
+### App running locally on localhost
 
 ![App running locally on localhost](docs/screenshots/week4-Node.js-app-running-locally.png)
 
@@ -395,13 +395,13 @@ What I Built This Week:
 - Exposes port 3000
 - Location: app/Dockerfile
 
-## Docker container running successfully
+### Docker container running successfully
 
 ![Docker container running successfully](docs/screenshots/week4-docker-run-successful.png)
 
-## Docker container running successfully
+### Docker image created locally
 
-![Docker container running successfully](docs/screenshots/week4-container-image-creation.png)
+![Docker image created](docs/screenshots/week4-container-image-creation.png)
 
 ## 3. AWS ECR Repository 
 
@@ -418,7 +418,7 @@ What I Built This Week:
 - Pushes latest tag for easy reference
 - File: .github/workflows/terraform.yaml
 
-## Terraform Plan PR check
+### Terraform Plan PR check
 
 ![Terraform Plan PR check](docs/screenshots/week4-terraform-plan-PR.png)
 
@@ -430,11 +430,11 @@ What I Built This Week:
 - Pass environment variables (Instance ID, AZ)
 - Location: modules/compute/main.tf (user_data locals)
 
-## Docker image pushed to ECR
+### Docker image pushed to ECR
 
 ![Docker image pushed to ECR](docs/screenshots/week4-image-build-pushed-to-ECR.png)
 
-## Image is available in ECR repository
+### Docker image is available in ECR repository
 
 ![Image is available in ECR repository](docs/screenshots/week4-ECR-latest-image.png)
 
@@ -453,7 +453,7 @@ What I Built This Week:
 - App accessible at ALB DNS name 🚀
 - Final result - App live!
 
-## Final result - App live
+## Final result - App is live 🎉
 
 ![Final result - App live](docs/screenshots/week4-EC2-pulled-docker-image-ALB.png)
 
@@ -503,12 +503,12 @@ Step 10: App Live!
 
 # Issues Encountered & Solutions
 
-## Issue 1: Docker Permission Denied ❌
+### Issue 1: Docker Permission Denied ❌
 
 - Problem: docker logs app failed with permission error
 - Solution: Added usermod -a -G docker ec2-user to user_data script
 
-## Issue 2: IAM Role Not Attached ❌❌❌ (CRITICAL)
+### Issue 2: IAM Role Not Attached ❌❌❌ (CRITICAL)
 
 - Problem: Instances had no IAM credentials to pull from ECR
 - Symptoms:
@@ -533,7 +533,7 @@ iam_instance_profile {
   arn = aws_iam_instance_profile.ec2_profile.arn
 }
 ``` 
-## Issue 3: Health Check Grace Period Too Short ⚠️
+### Issue 3: Health Check Grace Period Too Short ⚠️
 
 - Problem: Instances killed before Docker finished starting
 - Solution:
@@ -542,7 +542,7 @@ iam_instance_profile {
 health_check_grace_period = 300  # from 60 seconds
 ```
 
-# Issue 4: Docker Image Not Tagged as latest ❌
+### Issue 4: Docker Image Not Tagged as latest ❌
 
 - Problem: User data pulled :latest but tag didn't exist in ECR
 - Symptoms:
@@ -560,7 +560,7 @@ docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
 # Learnings & Lessons
 
-## Key Lessons from This Week:
+### Key Lessons from This Week:
 
 - IAM Instance Profiles: Always use arn not name in launch templates
 - Docker Tags: Tag images with both commit hash AND latest
@@ -571,9 +571,9 @@ docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 - ECR Permissions: EC2 role needs AmazonEC2ContainerRegistryReadOnly
     
 
-# Conclusion
+## Conclusion
 
-## You've built a production-grade containerized application with fully automated deployment!
+### You've built a production-grade containerized application with fully automated deployment!
 
 - Infrastructure as Code ✅
 - Remote state management ✅
@@ -581,7 +581,7 @@ docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 - Containerized application ✅
 - Zero-manual deployments ✅
 
-## Your app is now:
+### Your app is now:
 
 - 🐳 Running in Docker containers
 - 🚀 Deployed automatically via GitHub Actions
