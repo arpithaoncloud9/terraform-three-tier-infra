@@ -378,68 +378,82 @@ What I Built This Week:
 
 ## 1. Node.js App
 
-▸ Simple server returning an HTML webpage
-▸ Displays instance metadata (Instance ID, Availability Zone)
-▸ Listens on port 3000
-▸ Location: app/server.js
+- Simple server returning an HTML webpage
+- Displays instance metadata (Instance ID, Availability Zone)
+- Listens on port 3000
+- Location: app/server.js
+
+## App running locally on localhost
 
 ![App running locally on localhost](docs/screenshots/week4-Node.js-app-running-locally.png)
 
 ## 2. Dockerfile
 
-▸ Multi-stage Docker image
-▸ Based on Node.js runtime
-▸ Installs dependencies from package.json
-▸ Exposes port 3000
-▸ Location: app/Dockerfile
+- Multi-stage Docker image
+- Based on Node.js runtime
+- Installs dependencies from package.json
+- Exposes port 3000
+- Location: app/Dockerfile
+
+## Docker container running successfully
 
 ![Docker container running successfully](docs/screenshots/week4-docker-run-successful.png)
+
+## Docker container running successfully
 
 ![Docker container running successfully](docs/screenshots/week4-container-image-creation.png)
 
 ## 3. AWS ECR Repository 
 
-▸ Private Docker registry in AWS
-▸ Stores containerized app images
-▸ Tagged with commit hash and latest
-▸ Created via GitHub Actions automation
+- Private Docker registry in AWS
+- Stores containerized app images
+- Tagged with commit hash and latest
+- Created via GitHub Actions automation
 
 ## 4. GitHub Actions Docker Pipeline 
 
-▸ Automatically builds Docker image on push to main
-▸ Authenticates with AWS ECR
-▸ Pushes image with commit hash tag
-▸ Pushes latest tag for easy reference
-▸ File: .github/workflows/terraform.yaml
+- Automatically builds Docker image on push to main
+- Authenticates with AWS ECR
+- Pushes image with commit hash tag
+- Pushes latest tag for easy reference
+- File: .github/workflows/terraform.yaml
+
+## Terraform Plan PR check
 
 ![Terraform Plan PR check](docs/screenshots/week4-terraform-plan-PR.png)
 
 ## 5. EC2 User Data Script Updates
 
-▸ Instances install Docker on startup
-▸ Pull image from ECR using IAM role credentials
-▸ Run container with proper port mapping (80→3000)
-▸ Pass environment variables (Instance ID, AZ)
-▸ Location: modules/compute/main.tf (user_data locals)
+- Instances install Docker on startup
+- Pull image from ECR using IAM role credentials
+- Run container with proper port mapping (80→3000)
+- Pass environment variables (Instance ID, AZ)
+- Location: modules/compute/main.tf (user_data locals)
+
+## Docker image pushed to ECR
 
 ![Docker image pushed to ECR](docs/screenshots/week4-image-build-pushed-to-ECR.png)
+
+## Image is available in ECR repository
 
 ![Image is available in ECR repository](docs/screenshots/week4-ECR-latest-image.png)
 
 ## 6. IAM Configuration 
 
-▸ EC2 role with ECR read-only permissions
-▸ EC2 instances can authenticate to ECR without hardcoded credentials
-▸ SSM permissions for Session Manager access
-▸ Location: modules/compute/main.tf
+- EC2 role with ECR read-only permissions
+- EC2 instances can authenticate to ECR without hardcoded credentials
+- SSM permissions for Session Manager access
+- Location: modules/compute/main.tf
 
 ## 7. App Live on ALB 
 
-▸ Load balancer routing traffic to healthy targets
-▸ Instances pulling latest image from ECR
-▸ Docker container running the app
-▸ App accessible at ALB DNS name 🚀
-▸ Final result - App live!
+- Load balancer routing traffic to healthy targets
+- Instances pulling latest image from ECR
+- Docker container running the app
+- App accessible at ALB DNS name 🚀
+- Final result - App live!
+
+## Final result - App live
 
 ![Final result - App live](docs/screenshots/week4-EC2-pulled-docker-image-ALB.png)
 
@@ -491,13 +505,13 @@ Step 10: App Live!
 
 ## Issue 1: Docker Permission Denied ❌
 
-▸ Problem: docker logs app failed with permission error
-▸ Solution: Added usermod -a -G docker ec2-user to user_data script
+- Problem: docker logs app failed with permission error
+- Solution: Added usermod -a -G docker ec2-user to user_data script
 
 ## Issue 2: IAM Role Not Attached ❌❌❌ (CRITICAL)
 
-▸ Problem: Instances had no IAM credentials to pull from ECR
-▸ Symptoms:
+- Problem: Instances had no IAM credentials to pull from ECR
+- Symptoms:
 
 curl http://169.254.169.254/latest/meta-data/iam/security-credentials/ returned empty
 ECR image pull failed silently
@@ -505,8 +519,8 @@ Docker container never started
 Health checks failed
 App was unreachable
 
-▸ Root Cause: Launch template was using name instead of arn for IAM instance profile
-▸ Solution: Changed to ARN reference (this was the critical fix!)
+- Root Cause: Launch template was using name instead of arn for IAM instance profile
+- Solution: Changed to ARN reference (this was the critical fix!)
 
 ```hcl
 # ❌ This didn't work:
@@ -521,8 +535,8 @@ iam_instance_profile {
 ``` 
 ## Issue 3: Health Check Grace Period Too Short ⚠️
 
-▸ Problem: Instances killed before Docker finished starting
-▸ Solution: Increased to 300 seconds
+- Problem: Instances killed before Docker finished starting
+- Solution:
 
 ```hcl
 health_check_grace_period = 300  # from 60 seconds
@@ -530,14 +544,14 @@ health_check_grace_period = 300  # from 60 seconds
 
 # Issue 4: Docker Image Not Tagged as latest ❌
 
-▸ Problem: User data pulled :latest but tag didn't exist in ECR
-▸ Symptoms:
+- Problem: User data pulled :latest but tag didn't exist in ECR
+- Symptoms:
 
 docker pull failed with "manifest not found"
 Container never started
 Instance kept getting replaced by ASG
 
-▸ Solution: Updated GitHub Actions to push both commit hash AND latest tag
+- Symptoms: Updated GitHub Actions to push both commit hash AND latest tag
 
 ```yaml
 docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
@@ -548,29 +562,30 @@ docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
 ## Key Lessons from This Week:
 
-▸ IAM Instance Profiles: Always use arn not name in launch templates
-▸ Docker Tags: Tag images with both commit hash AND latest
-▸ Health Checks: Give instances enough time to start (300+ seconds)
-▸ Session Manager: Better than SSH for secure instance access
-▸ Metadata Queries: Always verify IAM role with: curl http://169.254.169.254/latest/meta-data/iam/security-credentials/
-▸ User Data Scripts: Test startup scripts locally before deploying
-▸ ECR Permissions: EC2 role needs AmazonEC2ContainerRegistryReadOnly      
+- IAM Instance Profiles: Always use arn not name in launch templates
+- Docker Tags: Tag images with both commit hash AND latest
+- Health Checks: Give instances enough time to start (300+ seconds)
+- Session Manager: Better than SSH for secure instance access
+- Metadata Queries: Always verify IAM role with: curl http://169.254.169.254/latest/meta-data/iam/security-credentials/
+- User Data Scripts: Test startup scripts locally before deploying
+- ECR Permissions: EC2 role needs AmazonEC2ContainerRegistryReadOnly
+    
 
 # Conclusion
 
 ## You've built a production-grade containerized application with fully automated deployment!
 
-▸ Infrastructure as Code ✅
-▸ Remote state management ✅
-▸ Automated CI/CD pipeline ✅
-▸ Containerized application ✅
-▸ Zero-manual deployments ✅
+- Infrastructure as Code ✅
+- Remote state management ✅
+- Automated CI/CD pipeline ✅
+- Containerized application ✅
+- Zero-manual deployments ✅
 
 ## Your app is now:
 
-🐳 Running in Docker containers
-🚀 Deployed automatically via GitHub Actions
-📦 Stored in AWS ECR
-⚖️ Load-balanced via ALB
-🔄 Auto-scaling across availability zones
-🎉 LIVE and accessible at your ALB DNS!
+- 🐳 Running in Docker containers
+- 🚀 Deployed automatically via GitHub Actions
+- 📦 Stored in AWS ECR
+- ⚖️ Load-balanced via ALB
+- 🔄 Auto-scaling across availability zones
+- 🎉 LIVE and accessible at your ALB DNS!
