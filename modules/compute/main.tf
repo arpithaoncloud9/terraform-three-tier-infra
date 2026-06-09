@@ -108,21 +108,83 @@ locals {
     #!/bin/bash
     set -e
 
+    # Log all output for debugging
+    exec > >(tee /var/log/user-data.log)
+    exec 2>&1
+
+    echo "=== Starting EC2 Setup ==="
+    echo "Timestamp: $(date)"
+
     # Update system
+    echo "Updating system..."
     dnf update -y
 
     # Install Docker
+    echo "Installing Docker..."
     dnf install -y docker
     systemctl enable docker
     systemctl start docker
 
     # Adds ec2-user to docker group
+    echo "Adding ec2-user to docker group..."
     usermod -a -G docker ec2-user
 
     # Install AWS CLI v2
+    echo "Installing AWS CLI..."
     dnf install -y aws-cli
 
+    # ========== CloudWatch Logs Agent Setup ==========
+    echo "Setting up CloudWatch Logs Agent..."
+    
+    # Download and install CloudWatch agent
+    wget -q https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
+    dnf install -y ./amazon-cloudwatch-agent.rpm
+    
+    # Create CloudWatch agent configuration
+    cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'CONFIG'
+    {
+      "logs": {
+        "logs_collected": {
+          "files": {
+            "collect_list": [
+              {
+                "file_path": "/var/log/docker.log",
+                "log_group_name": "/aws/ec2/aws-3tier-app-logs",
+                "log_stream_name": "docker-logs",
+                "timezone": "UTC"
+              },
+              {
+                "file_path": "/var/log/messages",
+                "log_group_name": "/aws/ec2/aws-3tier-system-logs",
+                "log_stream_name": "system-logs",
+                "timezone": "UTC"
+              },
+              {
+                "file_path": "/var/log/user-data.log",
+                "log_group_name": "/aws/ec2/aws-3tier-setup-logs",
+                "log_stream_name": "setup-logs",
+                "timezone": "UTC"
+              }
+            ]
+          }
+        }
+      }
+    }
+    CONFIG
+
+    # Start CloudWatch agent
+    echo "Starting CloudWatch agent..."
+    /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+      -a fetch-config \
+      -m ec2 \
+      -s \
+      -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+
+    echo "CloudWatch agent started successfully"
+
+    # ========== Get Instance Metadata ==========
     # IMDSv2 token for metadata
+    echo "Fetching instance metadata..."
     TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" \
       -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
 
@@ -132,22 +194,60 @@ locals {
     AZ=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" \
       http://169.254.169.254/latest/meta-data/placement/availability-zone)
 
-    # Log into ECR using instance IAM role
+    echo "Instance ID: $INSTANCE_ID"
+    echo "Availability Zone: $AZ"
+
+    # ========== ECR Login and Docker Pull ==========
+    echo "Logging into ECR..."
     aws ecr get-login-password --region us-east-1 | \
       docker login --username AWS --password-stdin \
       120300897885.dkr.ecr.us-east-1.amazonaws.com
 
-    # Pull image from ECR
+    echo "Pulling Docker image from ECR..."
     docker pull 120300897885.dkr.ecr.us-east-1.amazonaws.com/aws-3tier-app:latest
 
-    # Run the container
+    # ========== Run Docker Container with CloudWatch Logs ==========
+    echo "Starting Docker container..."
     docker run -d \
       --name app \
       --restart always \
+      --log-driver awslogs \
+      --log-opt awslogs-group=/aws/ec2/aws-3tier-app-logs \
+      --log-opt awslogs-region=us-east-1 \
+      --log-opt awslogs-stream="container-$INSTANCE_ID" \
       -p 80:3000 \
       -e INSTANCE_ID=$INSTANCE_ID \
       -e AZ=$AZ \
+      -e AWS_REGION=us-east-1 \
+      -e ENVIRONMENT=production \
       120300897885.dkr.ecr.us-east-1.amazonaws.com/aws-3tier-app:latest
+
+    # Verify container is running
+    sleep 3
+    if docker ps | grep -q app; then
+      echo "✓ Docker container is running successfully"
+    else
+      echo "✗ ERROR: Docker container failed to start"
+      docker logs app
+      exit 1
+    fi
+
+    # Test health check
+    echo "Testing application health..."
+    max_attempts=10
+    attempt=1
+    while [ $attempt -le $max_attempts ]; do
+      if curl -s http://localhost:80/health > /dev/null; then
+        echo "✓ Application is responding to health checks"
+        break
+      fi
+      echo "Health check attempt $attempt/$max_attempts..."
+      sleep 2
+      attempt=$((attempt + 1))
+    done
+
+    echo "=== EC2 Setup Complete ==="
+    echo "Instance is ready for traffic"
   EOF
 }
 

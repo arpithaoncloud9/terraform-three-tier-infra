@@ -72,3 +72,17 @@ module "database" {
   backup_retention_period = var.backup_retention_period
 }
 
+# Add monitoring module
+module "monitoring" {
+  source = "./modules/monitoring"
+
+  project_name      = var.project_name
+  environment       = var.environment
+  aws_region        = var.aws_region
+  alert_email       = var.alert_email
+  ec2_role_name     = module.compute.ec2_role_name
+  alb_name          = module.alb.alb_name
+  target_group_name = module.alb.target_group_name
+  asg_name          = module.compute.asg_name
+  rds_instance_id   = module.database.rds_instance_id
+}
