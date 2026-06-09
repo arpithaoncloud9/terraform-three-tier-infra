@@ -1,3 +1,4 @@
+# ============ Terraform ============
 # Local .terraform directories
 **/.terraform/*
 
@@ -28,15 +29,57 @@ terraform.rc
 # Ignore lock files
 .terraform.lock.hcl
 
-# IDE / editor
-.vscode/
-.idea/
-*.swp
-*.swo
-.DS_Store
-
 # Plan output
 *.tfplan
 
 # Allow the example tfvars
-!terraform.tfvars.exampleapp/node_modules/
+!terraform.tfvars.example
+
+# ============ Node.js / App ============
+app/node_modules/
+app/package-lock.json
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ============ Docker ============
+.docker
+.dockerignore
+
+# ============ IDE / Editor ============
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+
+# ============ Environment ============
+.env
+.env.local
+.env.*.local
+.env.production.local
+
+# ============ OS ============
+.DS_Store
+.AppleDouble
+.LSOverride
+*.pem
+*.key
+*.crt
+
+# ============ AWS ============
+.aws/
+credentials
+~/.aws/
+
+# ============ Build artifacts ============
+dist/
+build/
+*.tar
+*.tar.gz
+*.zip
