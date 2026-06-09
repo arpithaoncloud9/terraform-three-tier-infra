@@ -40,6 +40,10 @@ jobs:
         id: fmt
         run: terraform fmt -check -recursive
 
+      - name: Terraform Format (Auto-fix)
+        id: fmt-fix
+        run: terraform fmt -recursive
+
       - name: Terraform Init
         id: init
         run: terraform init
@@ -109,6 +113,10 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
+
+      - name: Terraform Format
+        run: terraform fmt -recursive
+        continue-on-error: true
 
       - name: Terraform Apply
         run: |
