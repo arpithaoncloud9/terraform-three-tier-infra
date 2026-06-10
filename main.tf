@@ -78,10 +78,10 @@ module "monitoring" {
 
   project_name       = var.project_name
   environment        = var.environment
-  ec2_role_name      = module.compute.ec2_role_name
-  alert_email        = "your-email@example.com"  # ← CHANGE THIS to your email
-  alb_name           = module.alb.alb_name
-  target_group_name  = module.alb.target_group_name
-  asg_name           = module.compute.asg_name
-  rds_instance_id    = module.database.rds_instance_id
+  ec2_role_name      = "aws-3tier-ec2-role"
+  alert_email        = "arpithaoncloud9@gmail.com" 
+  alb_name           = "aws-3tier-alb" 
+  target_group_name  = "aws-3tier-tg"
+  asg_name           = "aws-3tier-asg"
+  rds_instance_id    = "aws-3tier-db"
 }

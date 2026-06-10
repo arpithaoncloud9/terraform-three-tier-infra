@@ -7,7 +7,6 @@ resource "aws_cloudwatch_dashboard" "main" {
 
   dashboard_body = jsonencode({
     widgets = [
-      # Widget 1: ALB Metrics
       {
         type = "metric"
         properties = {
@@ -28,8 +27,6 @@ resource "aws_cloudwatch_dashboard" "main" {
           }
         }
       },
-
-      # Widget 2: EC2 CPU
       {
         type = "metric"
         properties = {
@@ -56,8 +53,6 @@ resource "aws_cloudwatch_dashboard" "main" {
           }
         }
       },
-
-      # Widget 3: RDS Metrics
       {
         type = "metric"
         properties = {
@@ -72,8 +67,6 @@ resource "aws_cloudwatch_dashboard" "main" {
           title  = "RDS Database Metrics"
         }
       },
-
-      # Widget 4: Critical Metrics
       {
         type = "metric"
         properties = {
@@ -88,23 +81,16 @@ resource "aws_cloudwatch_dashboard" "main" {
           title  = "Critical Metrics"
         }
       },
-
-      # Widget 5: Application Errors from CloudWatch Logs
       {
         type = "log"
         properties = {
-          query   = "fields @timestamp, @message | filter @message like /ERROR/ | stats count() as error_count by bin(5m)"
-          region  = data.aws_region.current.name
-          title   = "Application Errors (5-min bins)"
+          query  = "fields @timestamp, @message | filter @message like /ERROR/ | stats count() as error_count by bin(5m)"
+          region = data.aws_region.current.name
+          title  = "Application Errors (5-min bins)"
         }
       }
     ]
   })
-
-  tags = {
-    Environment = var.environment
-    Project     = var.project_name
-  }
 }
 
 output "dashboard_url" {
