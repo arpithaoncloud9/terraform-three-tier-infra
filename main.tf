@@ -76,13 +76,12 @@ module "database" {
 module "monitoring" {
   source = "./modules/monitoring"
 
-  project_name      = var.project_name
-  environment       = var.environment
-  aws_region        = var.aws_region
-  alert_email       = var.alert_email
-  ec2_role_name     = module.compute.ec2_role_name
-  alb_name          = module.alb.alb_name
-  target_group_name = module.alb.target_group_name
-  asg_name          = module.compute.asg_name
-  rds_instance_id   = module.database.rds_instance_id
+  project_name       = var.project_name
+  environment        = var.environment
+  ec2_role_name      = module.compute.ec2_role_name
+  alert_email        = "your-email@example.com"  # ← CHANGE THIS to your email
+  alb_name           = module.alb.alb_name
+  target_group_name  = module.alb.target_group_name
+  asg_name           = module.compute.asg_name
+  rds_instance_id    = module.database.rds_instance_id
 }

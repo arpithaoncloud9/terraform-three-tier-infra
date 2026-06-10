@@ -8,24 +8,19 @@ variable "environment" {
   description = "Environment (dev, staging, prod)"
 }
 
-variable "aws_region" {
-  type        = string
-  description = "AWS region"
-}
-
-variable "alert_email" {
-  type        = string
-  description = "Email address for alerts"
-}
-
 variable "ec2_role_name" {
   type        = string
   description = "EC2 IAM role name"
 }
 
+variable "alert_email" {
+  type        = string
+  description = "Email address for receiving alerts"
+}
+
 variable "alb_name" {
   type        = string
-  description = "ALB name"
+  description = "Application Load Balancer name"
 }
 
 variable "target_group_name" {

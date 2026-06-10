@@ -1,3 +1,7 @@
+# Get current AWS region
+data "aws_region" "current" {}
+
+# CloudWatch Dashboard with comprehensive metrics
 resource "aws_cloudwatch_dashboard" "main" {
   dashboard_name = "${var.project_name}-dashboard"
 
@@ -15,7 +19,7 @@ resource "aws_cloudwatch_dashboard" "main" {
           ]
           period = 300
           stat   = "Average"
-          region = var.aws_region
+          region = data.aws_region.current.name
           title  = "Application Load Balancer Metrics"
           yAxis = {
             left = {
@@ -34,7 +38,7 @@ resource "aws_cloudwatch_dashboard" "main" {
           ]
           period = 300
           stat   = "Average"
-          region = var.aws_region
+          region = data.aws_region.current.name
           title  = "EC2 CPU Utilization"
           yAxis = {
             left = {
@@ -64,12 +68,12 @@ resource "aws_cloudwatch_dashboard" "main" {
           ]
           period = 300
           stat   = "Average"
-          region = var.aws_region
+          region = data.aws_region.current.name
           title  = "RDS Database Metrics"
         }
       },
 
-      # Widget 4: Recent Alarms
+      # Widget 4: Critical Metrics
       {
         type = "metric"
         properties = {
@@ -80,17 +84,17 @@ resource "aws_cloudwatch_dashboard" "main" {
           ]
           period = 60
           stat   = "Average"
-          region = var.aws_region
+          region = data.aws_region.current.name
           title  = "Critical Metrics"
         }
       },
 
-      # Widget 5: Log Groups
+      # Widget 5: Application Errors from CloudWatch Logs
       {
         type = "log"
         properties = {
           query   = "fields @timestamp, @message | filter @message like /ERROR/ | stats count() as error_count by bin(5m)"
-          region  = var.aws_region
+          region  = data.aws_region.current.name
           title   = "Application Errors (5-min bins)"
         }
       }
@@ -104,6 +108,6 @@ resource "aws_cloudwatch_dashboard" "main" {
 }
 
 output "dashboard_url" {
-  value       = "https://console.aws.amazon.com/cloudwatch/home?region=${var.aws_region}#dashboards:name=${aws_cloudwatch_dashboard.main.dashboard_name}"
+  value       = "https://console.aws.amazon.com/cloudwatch/home?region=${data.aws_region.current.name}#dashboards:name=${aws_cloudwatch_dashboard.main.dashboard_name}"
   description = "URL to CloudWatch Dashboard"
 }

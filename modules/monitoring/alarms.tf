@@ -71,7 +71,7 @@ resource "aws_cloudwatch_metric_alarm" "alb_response_time" {
   namespace           = "AWS/ApplicationELB"
   period              = 300
   statistic           = "Average"
-  threshold           = 1  # 1 second
+  threshold           = 1
   alarm_description   = "CRITICAL: Response time is too high (>1 second)"
   alarm_actions       = [aws_sns_topic.critical_alerts.arn]
 
@@ -139,7 +139,7 @@ resource "aws_cloudwatch_metric_alarm" "high_db_connections" {
   namespace           = "AWS/RDS"
   period              = 300
   statistic           = "Average"
-  threshold           = 80  # 80% of max
+  threshold           = 80
   alarm_description   = "WARNING: Database connections > 80% of max"
   alarm_actions       = [aws_sns_topic.warning_alerts.arn]
 
@@ -161,7 +161,7 @@ resource "aws_cloudwatch_metric_alarm" "low_rds_memory" {
   namespace           = "AWS/RDS"
   period              = 300
   statistic           = "Average"
-  threshold           = 268435456  # 256 MB in bytes
+  threshold           = 268435456
   alarm_description   = "WARNING: RDS free memory < 256 MB"
   alarm_actions       = [aws_sns_topic.warning_alerts.arn]
 
@@ -174,7 +174,6 @@ resource "aws_cloudwatch_metric_alarm" "low_rds_memory" {
   }
 }
 
-# Outputs
 output "critical_alert_topic_arn" {
   value = aws_sns_topic.critical_alerts.arn
 }
