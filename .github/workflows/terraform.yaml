@@ -358,6 +358,9 @@ jobs:
     needs: [terraform-apply, docker-build-push, instance-refresh, health-check]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && always()
+    permissions:
+      contents: write
+      pull-requests: write
 
     steps:
       - name: Checkout code
