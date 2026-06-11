@@ -130,7 +130,7 @@ locals {
     set -e
 
     # Log all output for debugging
-    exec > >(tee /var/log/user-data.log)
+    exec >> /var/log/user-data.log 2>&1
     exec 2>&1
 
     echo "=== Starting EC2 Setup ==="

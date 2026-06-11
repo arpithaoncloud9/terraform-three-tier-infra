@@ -83,3 +83,13 @@ build/
 *.tar
 *.tar.gz
 *.zip
+
+# Private keys - NEVER commit these!
+*.pem
+**/aws-3tier-dev-key.pem
+modules/compute/aws-3tier-dev-key.pem
+
+# Terraform state files
+*.tfstate
+*.tfstate.*
+.terraform/
