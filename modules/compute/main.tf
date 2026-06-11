@@ -131,7 +131,6 @@ locals {
 
     # Log all output for debugging
     exec >> /var/log/user-data.log 2>&1
-    exec 2>&1
 
     echo "=== Starting EC2 Setup ==="
     echo "Timestamp: $(date)"
