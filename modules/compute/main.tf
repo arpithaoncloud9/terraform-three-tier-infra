@@ -138,10 +138,10 @@ locals {
     
     # Download and install CloudWatch agent
     wget -q https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
-    dnf install -y ./amazon-cloudwatch-agent.rpm
+    dnf install -y ./amazon-cloudwatch-agent.rpm 2>/dev/null || true
     
-    # Create CloudWatch agent configuration
-    cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'CONFIG'
+    # Create simple configuration
+    cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'CCONFIG'
     {
       "logs": {
         "logs_collected": {
@@ -164,9 +164,11 @@ locals {
         }
       }
     }
-    CONFIG
+    CCONFIG
 
-    # Start CloudWatch agent
+    echo "CloudWatch agent config created"
+
+   # ========== Start CloudWatch agent ==========
     echo "Starting CloudWatch agent..."
     /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
       -a fetch-config \
