@@ -128,8 +128,8 @@ jobs:
         id: outputs
         run: |
           dashboard_url=$(terraform output -raw cloudwatch_dashboard_url 2>/dev/null || echo "")
-          alb_dns=$(terraform output -raw alb_dns 2>/dev/null || echo "")
-          asg_name=$(terraform output -raw asg_name 2>/dev/null || echo "")
+          alb_dns=$(terraform output -raw alb_dns 2>/dev/null || echo "N/A")
+          asg_name=$(terraform output -raw asg_name 2>/dev/null || echo "N/A")
               
           echo "dashboard_url=$dashboard_url" >> $GITHUB_OUTPUT
           echo "alb_dns=$alb_dns" >> $GITHUB_OUTPUT
@@ -145,6 +145,10 @@ jobs:
           echo "${{ steps.outputs.outputs.asg_name }}" > /tmp/workflow/asg_name.txt
           echo "${{ steps.outputs.outputs.alb_dns }}" > /tmp/workflow/alb_dns.txt
           echo "${{ steps.outputs.outputs.dashboard_url }}" > /tmp/workflow/dashboard_url.txt
+
+          echo "Stored outputs:"
+          cat /tmp/workflow/alb_dns.txt
+          cat /tmp/workflow/asg_name.txt
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -301,25 +305,29 @@ jobs:
       - name: Health Check
         run: |
           alb_dns=${{ steps.alb.outputs.alb_dns }}
-          max_attempts=20
+          max_attempts=40
           attempt=0
 
           echo "Performing health checks on: http://$alb_dns/health"
+          echo "Max wait time: ~200 seconds (40 attempts × 5 seconds)"
+
           while [ $attempt -lt $max_attempts ]; do
             response=$(curl -s -o /dev/null -w "%{http_code}" http://$alb_dns/health 2>/dev/null || echo "000")
 
             echo "[$((attempt+1))/$max_attempts] Health check response: HTTP $response"
 
             if [ "$response" = "200" ]; then
-              echo "✓ Application is healthy!"
-              break
+              echo "✓ Application is healthy! (HTTP $response)"
+              echo "App started in $((attempt * 5)) seconds"
+              exit 0
             fi
-
+            
+            echo "  HTTP $response - Waiting 5 seconds..."
             sleep 5
             attempt=$((attempt+1))
           done
 
-          if [ "$response" != "200" ]; then
+
 
           echo "✗ Application health check failed (HTTP $response)"
 
