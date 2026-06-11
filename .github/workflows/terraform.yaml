@@ -355,18 +355,21 @@ jobs:
           echo "✓ All endpoints responding"
 
   deployment-summary:
-    name: Deployment Summary
+    needs: [terraform-apply, docker-build-push, instance-refresh, health-check]
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [terraform-apply, docker-build-push, health-check]
+    if: always()
+
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Download terraform outputs
         uses: actions/download-artifact@v4
         with:
           name: terraform-outputs
           path: /tmp/workflow/
 
-      - name: Generate Summary
+      - name: Post Deployment Summary
         uses: actions/github-script@v7
         env:
           IMAGE_URI: ${{ needs.docker-build-push.outputs.image-uri }}
@@ -378,18 +381,28 @@ jobs:
             ...
 
               
-                        let dashboard = '';
-                        let albDns = '';
+                        let dashboard = 'N/A';
+                        let albDns = 'N/A';
                         try {
                           dashboard = fs.readFileSync('/tmp/workflow/dashboard_url.txt', 'utf8').trim();
                           albDns = fs.readFileSync('/tmp/workflow/alb_dns.txt', 'utf8').trim();
                         } catch (e) {
                           console.log('Warning: Could not read terraform outputs');
                         }
+
+                        try {
+                          if (fs.existsSync('/tmp/workflow/alb_dns.txt')) {
+                            albDns = fs.readFileSync('/tmp/workflow/alb_dns.txt', 'utf8').trim();
+                          }
+                        } catch (e) {
+                          console.log('Warning: Could not read ALB DNS');
+                        }
+
                         const imageUri = process.env.IMAGE_URI || 'N/A';
                         const commitSha = process.env.COMMIT_SHA || 'unknown';
                         const actor = process.env.ACTOR || 'unknown';
                         const timestamp = new Date().toISOString();
+                        
                         const summaryText = `✅ Deployment Completed Successfully!
 
             ### Deployment Details
