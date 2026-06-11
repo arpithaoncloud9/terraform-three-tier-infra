@@ -47,3 +47,9 @@ variable "asg_desired_capacity" {
   description = "Desired number of instances in the ASG."
   type        = number
 }
+
+variable "db_password" {
+  type        = string
+  description = "RDS database password"
+  sensitive   = true
+}
