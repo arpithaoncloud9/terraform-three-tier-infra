@@ -141,7 +141,7 @@ locals {
     dnf install -y ./amazon-cloudwatch-agent.rpm 2>/dev/null || true
     
     # Create simple configuration
-    cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'EOF'
+    cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'CCONFIG'
     {
       "logs": {
         "logs_collected": {
@@ -164,11 +164,11 @@ locals {
         }
       }
     }
-    EOF
+    CCONFIG
 
     echo "CloudWatch agent config created"
 
-    ========== Start CloudWatch agent ==========
+   # ========== Start CloudWatch agent ==========
     echo "Starting CloudWatch agent..."
     /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
       -a fetch-config \
