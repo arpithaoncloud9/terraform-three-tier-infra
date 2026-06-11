@@ -357,7 +357,7 @@ jobs:
   deployment-summary:
     needs: [terraform-apply, docker-build-push, instance-refresh, health-check]
     runs-on: ubuntu-latest
-    if: always()
+    if: github.ref == 'refs/heads/main' && always()
 
     steps:
       - name: Checkout code
@@ -365,6 +365,7 @@ jobs:
 
       - name: Download terraform outputs
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: terraform-outputs
           path: /tmp/workflow/
@@ -378,32 +379,23 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            ...
+                       
+            let dashboard = 'N/A';
+            let albDns = 'N/A';
 
-              
-                        let dashboard = 'N/A';
-                        let albDns = 'N/A';
-                        try {
-                          dashboard = fs.readFileSync('/tmp/workflow/dashboard_url.txt', 'utf8').trim();
-                          albDns = fs.readFileSync('/tmp/workflow/alb_dns.txt', 'utf8').trim();
-                        } catch (e) {
-                          console.log('Warning: Could not read terraform outputs');
-                        }
+            try {
+              dashboard = fs.readFileSync('/tmp/workflow/dashboard_url.txt', 'utf8').trim();
+              albDns = fs.readFileSync('/tmp/workflow/alb_dns.txt', 'utf8').trim();
+            } catch (e) {
+              console.log('Warning: Could not read terraform outputs');
+            }
 
-                        try {
-                          if (fs.existsSync('/tmp/workflow/alb_dns.txt')) {
-                            albDns = fs.readFileSync('/tmp/workflow/alb_dns.txt', 'utf8').trim();
-                          }
-                        } catch (e) {
-                          console.log('Warning: Could not read ALB DNS');
-                        }
-
-                        const imageUri = process.env.IMAGE_URI || 'N/A';
-                        const commitSha = process.env.COMMIT_SHA || 'unknown';
-                        const actor = process.env.ACTOR || 'unknown';
-                        const timestamp = new Date().toISOString();
+              const imageUri = process.env.IMAGE_URI || 'N/A';
+              const commitSha = process.env.COMMIT_SHA || 'unknown';
+              const actor = process.env.ACTOR || 'unknown';
+              const timestamp = new Date().toISOString();
                         
-                        const summaryText = `✅ Deployment Completed Successfully!
+              const summaryText = `✅ Deployment Completed Successfully!
 
             ### Deployment Details
             - Commit: ${commitSha}
