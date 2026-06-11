@@ -84,4 +84,4 @@ module "monitoring" {
   target_group_name = "aws-3tier-tg"
   asg_name          = "aws-3tier-asg"
   rds_instance_id   = "aws-3tier-db"
- }
+}
