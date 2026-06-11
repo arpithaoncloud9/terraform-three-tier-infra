@@ -128,8 +128,8 @@ jobs:
         id: outputs
         run: |
           dashboard_url=$(terraform output -raw cloudwatch_dashboard_url 2>/dev/null || echo "")
-          alb_dns=$(terraform output -raw alb_dns 2>/dev/null || echo "N/A")
-          asg_name=$(terraform output -raw asg_name 2>/dev/null || echo "N/A")
+          alb_dns=$(terraform output -raw alb_dns_name 2>/dev/null || echo "")
+          asg_name=$(terraform output -raw asg_name 2>/dev/null || echo "")
               
           echo "dashboard_url=$dashboard_url" >> $GITHUB_OUTPUT
           echo "alb_dns=$alb_dns" >> $GITHUB_OUTPUT
