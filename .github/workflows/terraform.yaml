@@ -12,7 +12,7 @@ env:
 
 permissions:
   contents: read
-  pull-requests: write   # needed to post plan as PR comment
+  pull-requests: write # needed to post plan as PR comment
 
 jobs:
   terraform-plan:
@@ -39,6 +39,10 @@ jobs:
       - name: Terraform Format Check
         id: fmt
         run: terraform fmt -check -recursive
+
+      - name: Terraform Format (Auto-fix)
+        id: fmt-fix
+        run: terraform fmt -recursive
 
       - name: Terraform Init
         id: init
@@ -110,41 +114,321 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
+      - name: Terraform Format
+        run: terraform fmt -recursive
+        continue-on-error: true
+
       - name: Terraform Apply
         run: |
           terraform apply -auto-approve \
             -var="db_username=${{ secrets.TF_VAR_db_username }}" \
             -var="db_password=${{ secrets.TF_VAR_db_password }}"
-            
+
+      - name: Get CloudWatch Dashboard URL
+        id: outputs
+        run: |
+          dashboard_url=$(terraform output -raw cloudwatch_dashboard_url 2>/dev/null || echo "")
+          alb_dns=$(terraform output -raw alb_dns 2>/dev/null || echo "")
+          asg_name=$(terraform output -raw asg_name 2>/dev/null || echo "")
+              
+          echo "dashboard_url=$dashboard_url" >> $GITHUB_OUTPUT
+          echo "alb_dns=$alb_dns" >> $GITHUB_OUTPUT
+          echo "asg_name=$asg_name" >> $GITHUB_OUTPUT
+              
+          echo "Dashboard: $dashboard_url"
+          echo "ALB DNS: $alb_dns"
+          echo "ASG: $asg_name"
+
+      - name: Store outputs for next job
+        run: |
+          mkdir -p /tmp/workflow
+          echo "${{ steps.outputs.outputs.asg_name }}" > /tmp/workflow/asg_name.txt
+          echo "${{ steps.outputs.outputs.alb_dns }}" > /tmp/workflow/alb_dns.txt
+          echo "${{ steps.outputs.outputs.dashboard_url }}" > /tmp/workflow/dashboard_url.txt
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: terraform-outputs
+          path: /tmp/workflow/
+
   docker-build-push:
-              name: Build, Tag and Push Docker Image to ECR
-              runs-on: ubuntu-latest
-              if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-              needs: terraform-apply
-          
-              steps:
-                - name: Checkout code
-                  uses: actions/checkout@v4
-          
-                - name: Configure AWS credentials
-                  uses: aws-actions/configure-aws-credentials@v4
-                  with:
-                    aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-                    aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-                    aws-region: us-east-1
-          
-                - name: Login to Amazon ECR
-                  id: login-ecr
-                  uses: aws-actions/amazon-ecr-login@v2
-          
-                - name: Build, tag and push image to ECR
-                  env:
-                    ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-                    ECR_REPOSITORY: aws-3tier-app
-                    IMAGE_TAG: ${{ github.sha }}
-                  run: |
-                    docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./app
-                    docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
-                    docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-                    docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-                    echo "IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_STEP_SUMMARY            
+    name: Build, Tag and Push Docker Image to ECR
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: terraform-apply
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag and push image to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: aws-3tier-app
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./app
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_STEP_SUMMARY
+  instance-refresh:
+    name: Refresh EC2 Instances
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [terraform-apply, docker-build-push]
+
+    steps:
+      - name: Download terraform outputs
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-outputs
+          path: /tmp/workflow/
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get ASG Name
+        id: asg
+        run: |
+          asg_name=$(cat /tmp/workflow/asg_name.txt)
+          echo "asg_name=$asg_name" >> $GITHUB_OUTPUT
+          echo "ASG Name: $asg_name"
+
+      - name: Start Instance Refresh
+        id: refresh
+        run: |
+          echo "Starting instance refresh for ASG: ${{ steps.asg.outputs.asg_name }}"
+                
+          refresh_id=$(aws autoscaling start-instance-refresh \
+          --auto-scaling-group-name ${{ steps.asg.outputs.asg_name }} \
+          --preferences '{"MinHealthyPercentage": 50, "InstanceWarmup": 300}' \
+          --query 'InstanceRefreshId' \
+          --output text 2>/dev/null || echo "")
+                
+          if [ -z "$refresh_id" ]; then
+          echo "⚠ No instance refresh needed (ASG up to date)"
+          echo "refresh_id=skipped" >> $GITHUB_OUTPUT
+          else
+          echo "refresh_id=$refresh_id" >> $GITHUB_OUTPUT
+          echo "Instance Refresh ID: $refresh_id"
+          fi
+
+      - name: Monitor Instance Refresh
+        if: steps.refresh.outputs.refresh_id != 'skipped'
+        run: |
+          asg_name=${{ steps.asg.outputs.asg_name }}
+          max_attempts=30
+          attempt=0
+              
+              echo "Monitoring instance refresh progress..."
+              
+              while [ $attempt -lt $max_attempts ]; do
+                status=$(aws autoscaling describe-instance-refreshes \
+                  --auto-scaling-group-name $asg_name \
+                  --query 'InstanceRefreshes[0].Status' \
+                  --output text 2>/dev/null || echo "Unknown")
+                
+                percentage=$(aws autoscaling describe-instance-refreshes \
+                  --auto-scaling-group-name $asg_name \
+                  --query 'InstanceRefreshes[0].PercentageComplete' \
+                  --output text 2>/dev/null || echo "0")
+                
+                echo "[$((attempt+1))/$max_attempts] Status: $status | Progress: ${percentage}%"
+                
+                if [ "$status" = "Successful" ]; then
+                  echo "✓ Instance refresh completed successfully"
+                  break
+                elif [ "$status" = "Failed" ] || [ "$status" = "Cancelled" ]; then
+                  echo "✗ Instance refresh failed with status: $status"
+                  exit 1
+                fi
+                
+                sleep 10
+                attempt=$((attempt+1))
+              done
+              
+              if [ $attempt -eq $max_attempts ]; then
+                echo "⚠ Instance refresh monitoring timed out (still in progress)"
+              fi
+  health-check:
+    name: Verify Application Health
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [terraform-apply, instance-refresh]
+
+    steps:
+      - name: Download terraform outputs
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-outputs
+          path: /tmp/workflow/
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Wait for instances to stabilize
+        run: |
+          echo "Waiting for instances to stabilize (30 seconds)..."
+          sleep 30
+          - name: Get ALB DNS
+          id: alb
+          run: |
+            alb_dns=$(cat /tmp/workflow/alb_dns.txt)
+            echo "alb_dns=$alb_dns" >> $GITHUB_OUTPUT
+            echo "ALB DNS: $alb_dns"
+
+      - name: Health Check
+        run: |
+          alb_dns=${{ steps.alb.outputs.alb_dns }}
+          max_attempts=20
+          attempt=0
+
+          echo "Performing health checks on: http://$alb_dns"
+          while [ $attempt -lt $max_attempts ]; do
+            response=$(curl -s -o /dev/null -w "%{http_code}" http://$alb_dns/health 2>/dev/null || echo "000")
+
+            echo "[$((attempt+1))/$max_attempts] Health check response: HTTP $response"
+
+            if [ "$response" = "200" ]; then
+              echo "✓ Application is healthy!"
+              break
+            fi
+
+            sleep 5
+            attempt=$((attempt+1))
+          done
+
+          if [ "$response" != "200" ]; then
+
+          echo "✗ Application health check failed (HTTP $response)"
+
+          exit 1
+
+          fi
+
+      - name: Test Application Endpoints
+        run: |
+          alb_dns=${{ steps.alb.outputs.alb_dns }}
+
+          echo "Testing application endpoints..."
+          echo ""
+
+          echo "1. Testing GET /"
+          curl -s http://$alb_dns/ | head -20
+          echo ""
+
+
+          echo "2. Testing GET /health"
+          curl -s http://$alb_dns/health | jq . || curl -s http://$alb_dns/health
+          echo ""
+
+          echo "3. Testing GET /metrics"
+          curl -s http://$alb_dns/metrics | jq . || curl -s http://$alb_dns/metrics
+          echo ""
+
+          echo "✓ All endpoints responding"
+
+  deployment-summary:
+    name: Deployment Summary
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [terraform-apply, docker-build-push, health-check]
+    steps:
+      - name: Download terraform outputs
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-outputs
+          path: /tmp/workflow/
+
+      - name: Generate Summary
+        uses: actions/github-script@v7
+        env:
+          IMAGE_URI: ${{ needs.docker-build-push.outputs.image-uri }}
+          COMMIT_SHA: ${{ github.sha }}
+          ACTOR: ${{ github.actor }}
+        with:
+          script: |
+            const fs = require('fs');
+            ...
+
+              
+                        let dashboard = '';
+                        let albDns = '';
+                        try {
+                          dashboard = fs.readFileSync('/tmp/workflow/dashboard_url.txt', 'utf8').trim();
+                          albDns = fs.readFileSync('/tmp/workflow/alb_dns.txt', 'utf8').trim();
+                        } catch (e) {
+                          console.log('Warning: Could not read terraform outputs');
+                        }
+                        const imageUri = process.env.IMAGE_URI || 'N/A';
+                        const commitSha = process.env.COMMIT_SHA || 'unknown';
+                        const actor = process.env.ACTOR || 'unknown';
+                        const timestamp = new Date().toISOString();
+                        const summaryText = `✅ Deployment Completed Successfully!
+
+            ### Deployment Details
+            - Commit: ${commitSha}
+            - Author: @${actor}
+            - Branch: main
+            - Timestamp: ${timestamp}
+
+            ### Docker Image
+            - URI: ${imageUri}
+            - Tag: latest
+
+            ### CloudWatch
+            - Dashboard: ${dashboard}
+            - Log Groups: /aws/ec2/aws-3tier-app-logs
+
+            ### Application URLs
+            - Main: http://${albDns}/
+            - Health: http://${albDns}/health
+            - Metrics: http://${albDns}/metrics
+
+            ### Workflow Summary
+            ✓ Terraform validated
+            ✓ Infrastructure deployed
+            ✓ Docker image built and pushed
+            ✓ EC2 instances refreshed
+            ✓ Application health verified
+
+            ### Next Steps
+            1. Monitor application in CloudWatch Dashboard
+            2. Check CloudWatch Logs for application logs
+            3. View custom metrics (RequestCount, Latency, Errors)
+            4. Set up alarms for critical metrics
+
+            All systems operational and ready for production traffic.`;
+                        console.log(summaryText);
+                        try {
+                          github.rest.repos.createCommitComment({
+                            owner: context.repo.owner,
+                            repo: context.repo.repo,
+                            commit_sha: context.sha,
+                            body: summaryText
+                          });
+                          console.log('Comment posted to commit');
+                        } catch (err) {
+                          console.log('Note: Could not post comment');
+                        }

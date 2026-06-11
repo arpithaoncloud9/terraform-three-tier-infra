@@ -72,3 +72,16 @@ module "database" {
   backup_retention_period = var.backup_retention_period
 }
 
+# Add monitoring module
+module "monitoring" {
+  source = "./modules/monitoring"
+
+  project_name      = var.project_name
+  environment       = var.environment
+  ec2_role_name     = "aws-3tier-ec2-role"
+  alert_email       = "arpithaoncloud9@gmail.com"
+  alb_name          = "aws-3tier-alb"
+  target_group_name = "aws-3tier-tg"
+  asg_name          = "aws-3tier-asg"
+  rds_instance_id   = "aws-3tier-db"
+}
