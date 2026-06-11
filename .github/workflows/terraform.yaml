@@ -304,7 +304,7 @@ jobs:
           max_attempts=20
           attempt=0
 
-          echo "Performing health checks on: http://$alb_dns"
+          echo "Performing health checks on: http://$alb_dns/health"
           while [ $attempt -lt $max_attempts ]; do
             response=$(curl -s -o /dev/null -w "%{http_code}" http://$alb_dns/health 2>/dev/null || echo "000")
 
