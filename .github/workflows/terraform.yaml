@@ -291,12 +291,12 @@ jobs:
         run: |
           echo "Waiting for instances to stabilize (30 seconds)..."
           sleep 30
-          - name: Get ALB DNS
-          id: alb
-          run: |
-            alb_dns=$(cat /tmp/workflow/alb_dns.txt)
-            echo "alb_dns=$alb_dns" >> $GITHUB_OUTPUT
-            echo "ALB DNS: $alb_dns"
+      - name: Get ALB DNS
+        id: alb
+        run: |
+          alb_dns=$(cat /tmp/workflow/alb_dns.txt)
+          echo "alb_dns=$alb_dns" >> $GITHUB_OUTPUT
+          echo "ALB DNS: $alb_dns"
 
       - name: Health Check
         run: |
