@@ -589,3 +589,187 @@ docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 - ⚖️ Load-balanced via ALB
 - 🔄 Auto-scaling across availability zones
 - 🎉 LIVE and accessible at your ALB DNS!
+
+# **Week 5: CloudWatch Monitoring & Auto‑Scaling Deployment 🚀**
+
+## **📋 Overview**
+
+In **Week 5**, I enhanced my 3‑tier AWS application by adding **production‑grade monitoring, logging, and auto‑scaling**. Building on Weeks 1–4, this phase focused on observability, reliability, and automated instance lifecycle management.
+
+## **✅ Key Achievements**
+
+- Deployed **CloudWatch monitoring** across all EC2 instances
+- Created **5 active log streams** with real‑time ingestion
+- Configured **6 CloudWatch alarms** (critical + warning)
+- Implemented **auto‑scaling** with intelligent health checks
+- Integrated **Docker container logs** with CloudWatch
+- Automated deployments through **GitHub Actions**
+- Built **custom metrics** and a CloudWatch dashboard
+- Debugged and resolved multiple infrastructure issues
+
+## **🏗️ What I Implemented**
+
+### CloudWatch Monitoring Architecture
+- Centralized logging for EC2 + Docker
+- CloudWatch Agent installed via `user_data`
+- Log groups for application, system, and container logs
+- Custom metrics for request count, latency, errors, CPU, and memory
+
+#### Alerting & Notifications:
+
+
+![SNS Topics configured for alerting — separate channels for critical and warning CloudWatch alarms.](docs/screenshots/week5-sns-topic.png)
+
+
+#### Log Groups:  
+
+
+![CloudWatch Log Groups created for application logs, setup logs, and system logs — enabling full observability.](docs/screenshots/week5-log-group.png)
+
+
+#### Log Streams:
+
+
+![Active log streams from EC2 + Docker containers — real‑time log ingestion verified.](docs/screenshots/week5-log-stream.png)
+
+
+#### Alarms & Metrics:
+
+
+![CloudWatch alarms monitoring EC2, ALB, and RDS — covering CPU, memory, latency, unhealthy targets, and DB connections.](docs/screenshots/week5-log-alarms.png)
+
+
+
+## **🚀 Deployment Pipeline (End‑to‑End)**
+
+### **Developer Workflow**
+
+**Git Push → GitHub Actions Pipeline**
+
+- **Terraform Plan**
+    - Validates modules, variables, and syntax
+
+- **Terraform Apply**
+    - Deploys/updates EC2, ALB, RDS, IAM, CloudWatch
+
+- **Docker Build & Push**
+    - Builds image → pushes to ECR
+
+- **Instance Refresh (Rolling Update)**
+    - ASG launches new instance
+    - Waits for health checks
+    - Terminates old instance
+
+- **Deployment Summary**
+    - Posts results to PR/commit
+
+
+#### CI/CD Execution Results:
+
+
+![End‑to‑end CI/CD pipeline completed successfully — Terraform Apply, Docker Build, ASG Refresh, Health Checks, and Deployment Summary.](docs/screenshots/week5-deployment-workflow.png)
+
+
+#### GitHub PR Merge:
+
+
+![Pull request merged after fixing GitHub token permissions for posting deployment comments.](docs/screenshots/week5-PR-merge-successful.png)
+
+
+## **🖥️ EC2 Boot Sequence**
+
+- Instance launches
+- `user_data` executes
+- Installs Docker, AWS CLI, CloudWatch Agent
+- Logs into ECR
+- Pulls latest Docker image
+- Starts container
+- CloudWatch Agent streams logs
+- Application listens on port 80
+- ALB health checks `/health`
+- Marks instance **HEALTHY**
+
+## **🏭 Production State**
+
+- Application responding successfully
+- 5 CloudWatch log streams active
+- 5 custom metrics publishing
+- 6 alarms monitoring system health
+- Auto‑scaling ready
+- Zero failed health checks
+- Database connectivity verified
+
+## **📊 Final Results**
+
+- **2/2 EC2 instances running**
+- **2/2 ALB targets healthy**
+- **5 CloudWatch log streams active**
+- **5 custom metrics publishing**
+- **6 CloudWatch alarms configured**
+- **0 failed health checks**
+- **Application fully operational**
+
+#### Target Group — Healthy Instances:
+
+
+![Both EC2 instances registered and healthy behind the Application Load Balancer.](docs/screenshots/week5-healthy-targets.png)
+
+
+#### Both EC2 instances healthy across AZ‑1a and AZ‑1b — ALB routing, CloudWatch monitoring, and multi‑AZ redundancy fully verified.
+
+| | |
+|:---:|:---:|
+| ![Instance in AZ-1a](docs/screenshots/week5-1a-alb-dns.png) | ![Instance in AZ-1b](docs/screenshots/week5-1b-alb-dns.png) |
+| AZ-1a | AZ-1b |
+
+## 🔍 Issues I Solved & Lessons Learned (Week 5)
+
+1. **Heredoc Syntax**
+    - `<<-EOF` strips tabs, not spaces — caused invalid shebang.
+    - **Fix:** Switched to `<<EOF`.
+    - **Lesson:** Use the correct heredoc type when formatting matters.
+
+2. **Missing Tools**
+    - Amazon Linux 2023 doesn’t include `wget`.
+    - **Fix:** Replaced with `curl`.
+    - **Lesson:** Always verify tool availability on AMIs.
+
+3. **Exec Redirect Failure**
+    
+    - Redirecting logs to `/var/log` failed and `set -e` killed the script silently.
+    - **Fix:** Removed redirect; rely on Docker + CloudWatch logs.
+    - **Lesson:** Boot‑time redirects are fragile.
+
+4. **Disk Space**
+    - 8GB root volume too small for Docker + logs.
+    - **Fix:** Increased to 30GB.
+    - **Lesson:** Size volumes for real workloads.
+
+5. **IAM Policies**
+    - Assumed AWS managed policies existed.
+    - **Fix:** Created inline least‑privilege policies.
+    - **Lesson:** Never assume — define explicitly.
+
+6. **Health Check Timing**
+    - ALB killed instances before user_data finished.
+    - **Fix:** Switched to EC2 health checks + 600s grace period.
+    - **Lesson:** Grace period must exceed boot time.
+
+7. **Security Best Practices**
+    - Updated `.gitignore` to avoid committing sensitive files.
+    - **Lesson:** Protect infrastructure repos.
+
+8. **Infrastructure Refreshes**
+    - ASG refresh triggered too early.
+    - **Fix:** Tuned refresh strategy + lifecycle hooks.
+    - **Lesson:** Rolling updates must match app boot behavior.
+
+9. **CloudWatch Monitoring**
+    - Added logs, metrics, alarms, dashboard.
+    - **Lesson:** Observability must be built before scaling.
+
+## 🔚 Conclusion
+
+Week 5 brought the entire 3‑tier application to a **production‑ready state**, backed by full observability, automated scaling, and a reliable CI/CD pipeline. With CloudWatch monitoring, custom metrics, alarms, and real‑time log streaming in place, the system can now detect issues early, self‑heal through auto‑scaling, and support continuous deployments with zero downtime.
+
+This week solidified the environment as a **stable, monitored, and scalable production setup**, ready to handle real traffic and future enhancements.
