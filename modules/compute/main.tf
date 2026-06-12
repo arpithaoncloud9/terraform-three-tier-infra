@@ -299,6 +299,13 @@ resource "aws_launch_template" "app" {
     http_put_response_hop_limit = 1
   }
 
+  root_block_device {
+  volume_type           = "gp3"
+  volume_size           = 30  # Change from 8 to 30 GB
+  delete_on_termination = true
+  encrypted             = false
+}
+
   iam_instance_profile {
     arn = "arn:aws:iam::120300897885:instance-profile/${aws_iam_instance_profile.ec2_profile.name}"
   }
