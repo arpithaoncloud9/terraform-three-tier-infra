@@ -23,7 +23,7 @@ let metrics = {
  */
 async function sendMetricsToCloudWatch() {
   try {
-    const avgDuration = metrics.requestCount > 0 
+    const avgDuration = metrics.requestCount > 0
       ? Math.round(metrics.totalDuration / metrics.requestCount)
       : 0;
 
@@ -305,6 +305,7 @@ app.get('/', (req, res) => {
           <p class="subtitle">Terraform + Docker + GitHub Actions + CloudWatch</p>
           
           <div class="badge">✨ Production Ready Infrastructure ✨</div>
+          <div class="badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">👤 Deployed by Maria Arpitha</div>
 
           <div class="info-grid">
             <div class="info-item">
@@ -353,7 +354,7 @@ app.get('/', (req, res) => {
  * Health check endpoint - used by ALB
  */
 app.get('/health', (req, res) => {
-  res.status(200).json({ 
+  res.status(200).json({
     status: 'healthy',
     instanceId: process.env.INSTANCE_ID || 'unknown',
     timestamp: new Date().toISOString()
@@ -364,7 +365,7 @@ app.get('/health', (req, res) => {
  * Metrics endpoint - view current metrics
  */
 app.get('/metrics', (req, res) => {
-  const avgDuration = metrics.requestCount > 0 
+  const avgDuration = metrics.requestCount > 0
     ? Math.round(metrics.totalDuration / metrics.requestCount)
     : 0;
 
@@ -403,7 +404,7 @@ app.get('/test', (req, res) => {
 app.use((err, req, res, next) => {
   console.error('[ERROR]', err.message);
   sendErrorMetric('UNHANDLED_ERROR');
-  res.status(500).json({ 
+  res.status(500).json({
     error: 'Internal Server Error',
     message: err.message
   });
@@ -433,11 +434,11 @@ app.listen(PORT, async () => {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('\n[SHUTDOWN] Received SIGTERM, shutting down gracefully...');
-  
+
   // Send final metrics before shutdown
   if (metrics.requestCount > 0) {
     await sendMetricsToCloudWatch();
   }
-  
+
   process.exit(0);
 });
