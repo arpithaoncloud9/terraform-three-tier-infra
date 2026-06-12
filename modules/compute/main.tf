@@ -366,10 +366,10 @@ resource "aws_autoscaling_group" "app" {
     propagate_at_launch = true
   }
 
-# ADD THIS NEW TAG ↓
+  # ADD THIS NEW TAG ↓
   tag {
     key                 = "DeploymentVersion"
-    value               = "v2"  # Change this each time you deploy new code
+    value               = "v2" # Change this each time you deploy new code
     propagate_at_launch = false
   }
 
