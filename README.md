@@ -590,6 +590,8 @@ docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 - 🔄 Auto-scaling across availability zones
 - 🎉 LIVE and accessible at your ALB DNS!
 
+---
+
 # **Week 5: CloudWatch Monitoring & Auto‑Scaling Deployment 🚀**
 
 ## **📋 Overview**
@@ -615,28 +617,32 @@ In **Week 5**, I enhanced my 3‑tier AWS application by adding **production‑g
 - Log groups for application, system, and container logs
 - Custom metrics for request count, latency, errors, CPU, and memory
 
-#### Alerting & Notifications:
+### Alerting & Notifications:
+
+SNS Topics configured for alerting — separate channels for critical and warning CloudWatch alarms.
+
+![SNS Topics](docs/screenshots/week5-sns-topic.png)
 
 
-![SNS Topics configured for alerting — separate channels for critical and warning CloudWatch alarms.](docs/screenshots/week5-sns-topic.png)
+### Log Groups:  
+
+CloudWatch Log Groups created for application logs, setup logs, and system logs — enabling full observability.
+
+![CloudWatch Log Groups created](docs/screenshots/week5-log-group.png)
 
 
-#### Log Groups:  
+### Log Streams:
+
+Active log streams from EC2 + Docker containers — real‑time log ingestion verified.
+
+![Active log streams](docs/screenshots/week5-logstream.png)
 
 
-![CloudWatch Log Groups created for application logs, setup logs, and system logs — enabling full observability.](docs/screenshots/week5-log-group.png)
+### Alarms & Metrics:
 
+CloudWatch alarms monitoring EC2, ALB, and RDS — covering CPU, memory, latency, unhealthy targets, and DB connections.
 
-#### Log Streams:
-
-
-![Active log streams from EC2 + Docker containers — real‑time log ingestion verified.](docs/screenshots/week5-log-stream.png)
-
-
-#### Alarms & Metrics:
-
-
-![CloudWatch alarms monitoring EC2, ALB, and RDS — covering CPU, memory, latency, unhealthy targets, and DB connections.](docs/screenshots/week5-log-alarms.png)
+![CloudWatch alarms monitoring](docs/screenshots/week5-alarms.png)
 
 
 
@@ -644,7 +650,7 @@ In **Week 5**, I enhanced my 3‑tier AWS application by adding **production‑g
 
 ### **Developer Workflow**
 
-**Git Push → GitHub Actions Pipeline**
+#### Git Push → GitHub Actions Pipeline
 
 - **Terraform Plan**
     - Validates modules, variables, and syntax
@@ -664,16 +670,19 @@ In **Week 5**, I enhanced my 3‑tier AWS application by adding **production‑g
     - Posts results to PR/commit
 
 
-#### CI/CD Execution Results:
+
+### CI/CD Execution Results:
+
+End‑to‑end CI/CD pipeline completed successfully — Terraform Apply, Docker Build, ASG Refresh, Health Checks, and Deployment Summary.
+
+![End‑to‑end CI/CD pipeline completed successfully](docs/screenshots/week5-deployment-workflow.png)
 
 
-![End‑to‑end CI/CD pipeline completed successfully — Terraform Apply, Docker Build, ASG Refresh, Health Checks, and Deployment Summary.](docs/screenshots/week5-deployment-workflow.png)
+### GitHub PR Merge:
 
+Pull request merged after fixing GitHub token permissions for posting deployment comments.
 
-#### GitHub PR Merge:
-
-
-![Pull request merged after fixing GitHub token permissions for posting deployment comments.](docs/screenshots/week5-PR-merge-successful.png)
+![Pull request merged](docs/screenshots/week5-PR-merge-successful.png)
 
 
 ## **🖥️ EC2 Boot Sequence**
@@ -709,18 +718,20 @@ In **Week 5**, I enhanced my 3‑tier AWS application by adding **production‑g
 - **0 failed health checks**
 - **Application fully operational**
 
-#### Target Group — Healthy Instances:
+### Target Group — Healthy Instances:
 
 
 ![Both EC2 instances registered and healthy behind the Application Load Balancer.](docs/screenshots/week5-healthy-targets.png)
 
 
-#### Both EC2 instances healthy across AZ‑1a and AZ‑1b — ALB routing, CloudWatch monitoring, and multi‑AZ redundancy fully verified.
+
+### Both EC2 instances healthy across AZ‑1a and AZ‑1b — ALB routing, CloudWatch monitoring, and multi‑AZ redundancy fully verified.
 
 | | |
 |:---:|:---:|
 | ![Instance in AZ-1a](docs/screenshots/week5-1a-alb-dns.png) | ![Instance in AZ-1b](docs/screenshots/week5-1b-alb-dns.png) |
 | AZ-1a | AZ-1b |
+
 
 ## 🔍 Issues I Solved & Lessons Learned (Week 5)
 
@@ -767,6 +778,7 @@ In **Week 5**, I enhanced my 3‑tier AWS application by adding **production‑g
 9. **CloudWatch Monitoring**
     - Added logs, metrics, alarms, dashboard.
     - **Lesson:** Observability must be built before scaling.
+
 
 ## 🔚 Conclusion
 
