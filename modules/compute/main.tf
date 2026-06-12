@@ -299,28 +299,26 @@ resource "aws_launch_template" "app" {
     http_put_response_hop_limit = 1
   }
 
-  root_block_device {
-  volume_type           = "gp3"
-  volume_size           = 30  # Change from 8 to 30 GB
-  delete_on_termination = true
-  encrypted             = false
-}
+  block_device_mappings {
+    device_name = "/dev/xvda"
+    ebs {
+      volume_size           = 30
+      volume_type           = "gp3"
+      delete_on_termination = true
+      encrypted             = false
+    }
+  }
 
   iam_instance_profile {
-    arn = "arn:aws:iam::120300897885:instance-profile/${aws_iam_instance_profile.ec2_profile.name}"
+    name = aws_iam_instance_profile.ec2_profile.name
   }
 
   tag_specifications {
     resource_type = "instance"
-
     tags = merge(local.common_tags, {
       Name = "${var.project_name}-${var.environment}-app"
       Tier = "app"
     })
-  }
-
-  lifecycle {
-    create_before_destroy = true
   }
 }
 
