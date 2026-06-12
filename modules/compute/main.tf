@@ -154,7 +154,7 @@ dnf install -y aws-cli
 echo "Setting up CloudWatch Logs Agent..."
 
 # Download and install CloudWatch agent
-wget -q https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
+curl -s -O https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
 dnf install -y ./amazon-cloudwatch-agent.rpm 2>/dev/null || true
 
 # Create simple configuration
