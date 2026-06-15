@@ -245,8 +245,6 @@ jobs:
         env:
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          echo "Applying namespace..."
-          kubectl apply -f k8s/namespace.yaml
 
           echo "Updating deployment image to commit SHA..."
           sed -i "s|aws-3tier-app:latest|aws-3tier-app:$IMAGE_TAG|g" k8s/deployment.yaml
