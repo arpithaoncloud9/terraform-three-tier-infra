@@ -31,3 +31,8 @@ output "eks_nodes_security_group_id" {
   description = "Security group ID for EKS worker nodes."
   value       = aws_security_group.eks_nodes.id
 }
+
+output "node_group_asg_name" {
+  description = "Auto Scaling Group name backing the EKS node group."
+  value       = aws_eks_node_group.app.resources[0].autoscaling_groups[0].name
+}

@@ -785,3 +785,4 @@ Pull request merged after fixing GitHub token permissions for posting deployment
 Week 5 brought the entire 3‑tier application to a **production‑ready state**, backed by full observability, automated scaling, and a reliable CI/CD pipeline. With CloudWatch monitoring, custom metrics, alarms, and real‑time log streaming in place, the system can now detect issues early, self‑heal through auto‑scaling, and support continuous deployments with zero downtime.
 
 This week solidified the environment as a **stable, monitored, and scalable production setup**, ready to handle real traffic and future enhancements.
+--- 

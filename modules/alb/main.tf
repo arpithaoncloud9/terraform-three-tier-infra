@@ -52,14 +52,14 @@ resource "aws_lb" "this" {
 
 resource "aws_lb_target_group" "app" {
   name        = "${var.project_name}-${var.environment}-app-tg"
-  port        = 80
+  port        = 30080
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
   target_type = "instance"
 
   health_check {
     enabled             = true
-    path                = "/"
+    path                = "/health"
     protocol            = "HTTP"
     matcher             = "200"
     healthy_threshold   = 2
