@@ -127,3 +127,29 @@ variable "backup_retention_period" {
   type        = number
   default     = 0
 }
+
+# ---------------- EKS ----------------
+
+variable "node_instance_type" {
+  description = "EC2 instance type for EKS worker nodes."
+  type        = string
+  default     = "t3.micro"
+}
+
+variable "node_desired_size" {
+  description = "Desired number of EKS worker nodes."
+  type        = number
+  default     = 2
+}
+
+variable "node_min_size" {
+  description = "Minimum number of EKS worker nodes."
+  type        = number
+  default     = 2
+}
+
+variable "node_max_size" {
+  description = "Maximum number of EKS worker nodes."
+  type        = number
+  default     = 4
+}

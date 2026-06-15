@@ -8,16 +8,33 @@ output "alb_dns_name" {
   value       = module.alb.alb_dns_name
 }
 
-output "asg_name" {
-  description = "Name of the Auto Scaling Group."
-  value       = module.compute.asg_name
+# =========================================================
+# EKS — replaces asg_name output from Week 5
+# =========================================================
+
+output "eks_cluster_name" {
+  description = "Name of the EKS cluster."
+  value       = module.eks.cluster_name
 }
+
+output "eks_cluster_endpoint" {
+  description = "EKS API server endpoint."
+  value       = module.eks.cluster_endpoint
+}
+
+# =========================================================
+# Database
+# =========================================================
 
 output "db_endpoint" {
   description = "RDS endpoint (host:port) for the app to connect to."
   value       = module.database.db_endpoint
   sensitive   = true
 }
+
+# =========================================================
+# Monitoring
+# =========================================================
 
 output "cloudwatch_dashboard_url" {
   value       = module.monitoring.dashboard_url

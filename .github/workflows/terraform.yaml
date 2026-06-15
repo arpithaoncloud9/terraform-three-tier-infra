@@ -12,9 +12,13 @@ env:
 
 permissions:
   contents: read
-  pull-requests: write # needed to post plan as PR comment
+  pull-requests: write
 
 jobs:
+  # =========================================================
+  # JOB 1: Terraform Plan — runs on PR
+  # =========================================================
+
   terraform-plan:
     name: Terraform Plan (PR check)
     runs-on: ubuntu-latest
@@ -90,6 +94,10 @@ jobs:
         if: steps.plan.outcome == 'failure'
         run: exit 1
 
+  # =========================================================
+  # JOB 2: Terraform Apply — runs on merge to main
+  # =========================================================
+
   terraform-apply:
     name: Terraform Apply (merge to main)
     runs-on: ubuntu-latest
@@ -124,37 +132,41 @@ jobs:
             -var="db_username=${{ secrets.TF_VAR_db_username }}" \
             -var="db_password=${{ secrets.TF_VAR_db_password }}"
 
-      - name: Get CloudWatch Dashboard URL
+      - name: Get Terraform Outputs
         id: outputs
         run: |
           dashboard_url=$(terraform output -raw cloudwatch_dashboard_url 2>/dev/null || echo "")
           alb_dns=$(terraform output -raw alb_dns_name 2>/dev/null || echo "")
-          asg_name=$(terraform output -raw asg_name 2>/dev/null || echo "")
-              
+          eks_cluster=$(terraform output -raw eks_cluster_name 2>/dev/null || echo "")
+
           echo "dashboard_url=$dashboard_url" >> $GITHUB_OUTPUT
           echo "alb_dns=$alb_dns" >> $GITHUB_OUTPUT
-          echo "asg_name=$asg_name" >> $GITHUB_OUTPUT
-              
+          echo "eks_cluster=$eks_cluster" >> $GITHUB_OUTPUT
+
           echo "Dashboard: $dashboard_url"
           echo "ALB DNS: $alb_dns"
-          echo "ASG: $asg_name"
+          echo "EKS Cluster: $eks_cluster"
 
-      - name: Store outputs for next job
+      - name: Store outputs for next jobs
         run: |
           mkdir -p /tmp/workflow
-          echo "${{ steps.outputs.outputs.asg_name }}" > /tmp/workflow/asg_name.txt
+          echo "${{ steps.outputs.outputs.eks_cluster }}" > /tmp/workflow/eks_cluster.txt
           echo "${{ steps.outputs.outputs.alb_dns }}" > /tmp/workflow/alb_dns.txt
           echo "${{ steps.outputs.outputs.dashboard_url }}" > /tmp/workflow/dashboard_url.txt
 
           echo "Stored outputs:"
           cat /tmp/workflow/alb_dns.txt
-          cat /tmp/workflow/asg_name.txt
+          cat /tmp/workflow/eks_cluster.txt
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: terraform-outputs
           path: /tmp/workflow/
+
+  # =========================================================
+  # JOB 3: Docker Build and Push — unchanged
+  # =========================================================
 
   docker-build-push:
     name: Build, Tag and Push Docker Image to ECR
@@ -188,13 +200,21 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           echo "IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_STEP_SUMMARY
-  instance-refresh:
-    name: Refresh EC2 Instances
+
+  # =========================================================
+  # JOB 4: kubectl Deploy — replaces instance-refresh
+  # =========================================================
+
+  kubectl-deploy:
+    name: Deploy to EKS
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [terraform-apply, docker-build-push]
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Download terraform outputs
         uses: actions/download-artifact@v4
         with:
@@ -208,74 +228,71 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Get ASG Name
-        id: asg
+      - name: Get EKS cluster name
+        id: eks
         run: |
-          asg_name=$(cat /tmp/workflow/asg_name.txt)
-          echo "asg_name=$asg_name" >> $GITHUB_OUTPUT
-          echo "ASG Name: $asg_name"
+          eks_cluster=$(cat /tmp/workflow/eks_cluster.txt)
+          echo "eks_cluster=$eks_cluster" >> $GITHUB_OUTPUT
+          echo "EKS Cluster: $eks_cluster"
 
-      - name: Start Instance Refresh
-        id: refresh
+      - name: Configure kubectl
         run: |
-          echo "Starting instance refresh for ASG: ${{ steps.asg.outputs.asg_name }}"
-                
-          refresh_id=$(aws autoscaling start-instance-refresh \
-          --auto-scaling-group-name ${{ steps.asg.outputs.asg_name }} \
-          --preferences '{"MinHealthyPercentage": 50, "InstanceWarmup": 300}' \
-          --query 'InstanceRefreshId' \
-          --output text 2>/dev/null || echo "")
-                
-          if [ -z "$refresh_id" ]; then
-          echo "⚠ No instance refresh needed (ASG up to date)"
-          echo "refresh_id=skipped" >> $GITHUB_OUTPUT
-          else
-          echo "refresh_id=$refresh_id" >> $GITHUB_OUTPUT
-          echo "Instance Refresh ID: $refresh_id"
-          fi
+          aws eks update-kubeconfig \
+            --region ${{ env.AWS_REGION }} \
+            --name ${{ steps.eks.outputs.eks_cluster }}
 
-      - name: Monitor Instance Refresh
-        if: steps.refresh.outputs.refresh_id != 'skipped'
+      - name: Apply Kubernetes manifests
+        env:
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          asg_name=${{ steps.asg.outputs.asg_name }}
-          max_attempts=30
-          attempt=0
-              
-              echo "Monitoring instance refresh progress..."
-              
-              while [ $attempt -lt $max_attempts ]; do
-                status=$(aws autoscaling describe-instance-refreshes \
-                  --auto-scaling-group-name $asg_name \
-                  --query 'InstanceRefreshes[0].Status' \
-                  --output text 2>/dev/null || echo "Unknown")
-                
-                percentage=$(aws autoscaling describe-instance-refreshes \
-                  --auto-scaling-group-name $asg_name \
-                  --query 'InstanceRefreshes[0].PercentageComplete' \
-                  --output text 2>/dev/null || echo "0")
-                
-                echo "[$((attempt+1))/$max_attempts] Status: $status | Progress: ${percentage}%"
-                
-                if [ "$status" = "Successful" ]; then
-                  echo "✓ Instance refresh completed successfully"
-                  break
-                elif [ "$status" = "Failed" ] || [ "$status" = "Cancelled" ]; then
-                  echo "✗ Instance refresh failed with status: $status"
-                  exit 1
-                fi
-                
-                sleep 10
-                attempt=$((attempt+1))
-              done
-              
-              if [ $attempt -eq $max_attempts ]; then
-                echo "⚠ Instance refresh monitoring timed out (still in progress)"
-              fi
+          echo "Applying namespace..."
+          kubectl apply -f k8s/namespace.yaml
+
+          echo "Updating deployment image to commit SHA..."
+          sed -i "s|aws-3tier-app:latest|aws-3tier-app:$IMAGE_TAG|g" k8s/deployment.yaml
+
+          echo "Applying deployment..."
+          kubectl apply -f k8s/deployment.yaml
+
+          echo "Applying service..."
+          kubectl apply -f k8s/service.yaml
+
+          echo "Applying HPA..."
+          kubectl apply -f k8s/hpa.yaml
+
+      - name: Wait for rollout to complete
+        run: |
+          echo "Waiting for deployment rollout..."
+          kubectl rollout status deployment/aws-3tier-app \
+            --namespace aws-3tier-dev \
+            --timeout=300s
+
+      - name: Verify pods are running
+        run: |
+          echo "Pod status:"
+          kubectl get pods \
+            --namespace aws-3tier-dev \
+            --output wide
+
+          echo ""
+          echo "Service status:"
+          kubectl get service \
+            --namespace aws-3tier-dev
+
+          echo ""
+          echo "HPA status:"
+          kubectl get hpa \
+            --namespace aws-3tier-dev
+
+  # =========================================================
+  # JOB 5: Health Check
+  # =========================================================
+
   health-check:
     name: Verify Application Health
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [terraform-apply, instance-refresh]
+    needs: [terraform-apply, kubectl-deploy]
 
     steps:
       - name: Download terraform outputs
@@ -291,10 +308,11 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Wait for instances to stabilize
+      - name: Wait for pods to stabilize
         run: |
-          echo "Waiting for instances to stabilize (30 seconds)..."
+          echo "Waiting for pods to stabilize (30 seconds)..."
           sleep 30
+
       - name: Get ALB DNS
         id: alb
         run: |
@@ -312,7 +330,8 @@ jobs:
           echo "Max wait time: ~200 seconds (40 attempts × 5 seconds)"
 
           while [ $attempt -lt $max_attempts ]; do
-            response=$(curl -s -o /dev/null -w "%{http_code}" http://$alb_dns/health 2>/dev/null || echo "000")
+            response=$(curl -s -o /dev/null -w "%{http_code}" \
+              http://$alb_dns/health 2>/dev/null || echo "000")
 
             echo "[$((attempt+1))/$max_attempts] Health check response: HTTP $response"
 
@@ -320,17 +339,15 @@ jobs:
               echo "✓ Application is healthy!"
               exit 0
             fi
-            
+
             echo "  HTTP $response - Waiting 5 seconds..."
             sleep 5
             attempt=$((attempt+1))
           done
 
           echo "⚠️ Application not responding yet (HTTP 502)"
-          echo "This is normal - Docker container may still be starting"
+          echo "This is normal - pods may still be starting"
           exit 0
-
-          fi
 
       - name: Test Application Endpoints
         run: |
@@ -343,7 +360,6 @@ jobs:
           curl -s http://$alb_dns/ | head -20
           echo ""
 
-
           echo "2. Testing GET /health"
           curl -s http://$alb_dns/health | jq . || curl -s http://$alb_dns/health
           echo ""
@@ -352,10 +368,14 @@ jobs:
           curl -s http://$alb_dns/metrics | jq . || curl -s http://$alb_dns/metrics
           echo ""
 
-          echo "✓ All endpoints responding"
+          echo "✓ All endpoints tested"
+
+  # =========================================================
+  # JOB 6: Deployment Summary
+  # =========================================================
 
   deployment-summary:
-    needs: [terraform-apply, docker-build-push, instance-refresh, health-check]
+    needs: [terraform-apply, docker-build-push, kubectl-deploy, health-check]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && always()
     permissions:
@@ -376,29 +396,29 @@ jobs:
       - name: Post Deployment Summary
         uses: actions/github-script@v7
         env:
-          IMAGE_URI: ${{ needs.docker-build-push.outputs.image-uri }}
           COMMIT_SHA: ${{ github.sha }}
           ACTOR: ${{ github.actor }}
         with:
           script: |
             const fs = require('fs');
-                       
+
             let dashboard = 'N/A';
             let albDns = 'N/A';
+            let eksCluster = 'N/A';
 
             try {
               dashboard = fs.readFileSync('/tmp/workflow/dashboard_url.txt', 'utf8').trim();
               albDns = fs.readFileSync('/tmp/workflow/alb_dns.txt', 'utf8').trim();
+              eksCluster = fs.readFileSync('/tmp/workflow/eks_cluster.txt', 'utf8').trim();
             } catch (e) {
               console.log('Warning: Could not read terraform outputs');
             }
 
-              const imageUri = process.env.IMAGE_URI || 'N/A';
-              const commitSha = process.env.COMMIT_SHA || 'unknown';
-              const actor = process.env.ACTOR || 'unknown';
-              const timestamp = new Date().toISOString();
-                        
-              const summaryText = `✅ Deployment Completed Successfully!
+            const commitSha = process.env.COMMIT_SHA || 'unknown';
+            const actor = process.env.ACTOR || 'unknown';
+            const timestamp = new Date().toISOString();
+
+            const summaryText = `✅ Week 6 Deployment Completed Successfully!
 
             ### Deployment Details
             - Commit: ${commitSha}
@@ -406,42 +426,43 @@ jobs:
             - Branch: main
             - Timestamp: ${timestamp}
 
-            ### Docker Image
-            - URI: ${imageUri}
-            - Tag: latest
+            ### Infrastructure
+            - EKS Cluster: ${eksCluster}
+            - ALB DNS: http://${albDns}
 
             ### CloudWatch
             - Dashboard: ${dashboard}
-            - Log Groups: /aws/ec2/aws-3tier-app-logs
+            - Log Groups: /aws/eks/aws-3tier-dev/cluster
+
+            ### Kubernetes
+            - Namespace: aws-3tier-dev
+            - Deployment: aws-3tier-app (2 pods)
+            - HPA: min 2 / max 6 pods at 70% CPU
 
             ### Application URLs
-            - Main: http://${albDns}/
-            - Health: http://${albDns}/health
+            - Main:    http://${albDns}/
+            - Health:  http://${albDns}/health
             - Metrics: http://${albDns}/metrics
 
             ### Workflow Summary
-            ✓ Terraform validated
-            ✓ Infrastructure deployed
-            ✓ Docker image built and pushed
-            ✓ EC2 instances refreshed
+            ✓ Terraform applied (EKS + VPC + ALB + RDS)
+            ✓ Docker image built and pushed to ECR
+            ✓ Kubernetes manifests applied
+            ✓ Rolling deployment completed (~30 seconds)
             ✓ Application health verified
 
-            ### Next Steps
-            1. Monitor application in CloudWatch Dashboard
-            2. Check CloudWatch Logs for application logs
-            3. View custom metrics (RequestCount, Latency, Errors)
-            4. Set up alarms for critical metrics
+            All systems operational on EKS.`;
 
-            All systems operational and ready for production traffic.`;
-                        console.log(summaryText);
-                        try {
-                          github.rest.repos.createCommitComment({
-                            owner: context.repo.owner,
-                            repo: context.repo.repo,
-                            commit_sha: context.sha,
-                            body: summaryText
-                          });
-                          console.log('Comment posted to commit');
-                        } catch (err) {
-                          console.log('Note: Could not post comment');
-                        }
+            console.log(summaryText);
+
+            try {
+              github.rest.repos.createCommitComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                commit_sha: context.sha,
+                body: summaryText
+              });
+              console.log('Comment posted to commit');
+            } catch (err) {
+              console.log('Note: Could not post comment');
+            }
