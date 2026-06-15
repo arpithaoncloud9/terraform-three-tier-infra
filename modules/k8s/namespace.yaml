@@ -1,0 +1,12 @@
+# =========================================================
+# Namespace - logical boundary for our app
+# =========================================================
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aws-3tier-dev
+  labels:
+    project: aws-3tier
+    environment: dev
+    managed-by: terraform

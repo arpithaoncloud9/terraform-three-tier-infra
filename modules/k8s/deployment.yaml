@@ -1,0 +1,84 @@
+# =========================================================
+# Deployment - runs 2 pods of our Node.js app
+# =========================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aws-3tier-app
+  namespace: aws-3tier-dev
+  labels:
+    app: aws-3tier-app
+    environment: dev
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: aws-3tier-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1 # spin up 1 extra pod during deploy
+      maxUnavailable: 0 # never take a pod down before new one is ready
+  template:
+    metadata:
+      labels:
+        app: aws-3tier-app
+        environment: dev
+    spec:
+      containers:
+        - name: aws-3tier-app
+          image: 120300897885.dkr.ecr.us-east-1.amazonaws.com/aws-3tier-app:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: AWS_REGION
+              value: "us-east-1"
+            - name: ENVIRONMENT
+              value: "production"
+            - name: INSTANCE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName # node name as instance identifier
+            - name: AZ
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['topology.kubernetes.io/zone']
+            - name: DB_HOST
+              value: "aws-3tier-db.ch2zz9lqvp9c.us-east-1.rds.amazonaws.com"
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_USER
+              value: "admin"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aws-3tier-secrets
+                  key: db_password
+            - name: DB_NAME
+              value: "appdb"
+          resources:
+            requests:
+              cpu: "100m" # 0.1 CPU core — fits t3.micro
+              memory: "128Mi"
+            limits:
+              cpu: "300m" # 0.3 CPU core max
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            failureThreshold: 3
+      terminationGracePeriodSeconds: 30
