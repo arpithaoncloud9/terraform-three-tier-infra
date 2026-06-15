@@ -258,7 +258,6 @@ jobs:
           kubectl apply -f k8s/service.yaml
 
           echo "Applying HPA..."
-          kubectl apply -f k8s/hpa.yaml
 
       - name: Wait for rollout to complete
         run: |
