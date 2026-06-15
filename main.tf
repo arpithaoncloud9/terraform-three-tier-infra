@@ -2,28 +2,6 @@
 # Root module - composes the four child modules.
 # =========================================================
 
-terraform {
-  required_version = ">= 1.7.0"
-  
-required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "~> 2.0"
-    }
-  }
-
-  backend "s3" {
-    bucket         = "aws-3tier-terraform-state"
-    key            = "aws-3tier/dev/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "aws-3tier-terraform-locks"
-    encrypt        = true
-  }
-}
 provider "aws" {
   region = var.aws_region
 
@@ -128,7 +106,7 @@ module "eks" {
 # Kubernetes Secret — DB password injected securely into pods
 # =========================================================
 
-resource "kubernetes_secret" "app_secrets" {
+resource "kubernetes_secret_v1" "app_secrets" {
   metadata {
     name      = "aws-3tier-secrets"
     namespace = "aws-3tier-dev"
@@ -155,7 +133,7 @@ module "database" {
   environment             = var.environment
   vpc_id                  = module.vpc.vpc_id
   private_db_subnet_ids   = module.vpc.private_db_subnet_ids
-  app_security_group_id   = module.compute.app_security_group_id
+  app_security_group_id   = module.eks.eks_nodes_security_group_id
   db_engine               = var.db_engine
   db_engine_version       = var.db_engine_version
   db_instance_class       = var.db_instance_class
@@ -179,6 +157,6 @@ module "monitoring" {
   alert_email       = "arpithaoncloud9@gmail.com"
   alb_name          = "aws-3tier-alb"
   target_group_name = "aws-3tier-tg"
-  asg_name          = "aws-3tier-asg"
+  asg_name          = module.eks.cluster_name
   rds_instance_id   = "aws-3tier-db"
 }
