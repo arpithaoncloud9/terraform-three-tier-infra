@@ -103,13 +103,30 @@ module "eks" {
 # }
 
 # =========================================================
+# Kubernetes Namespace — must exist before secret
+# =========================================================
+
+resource "kubernetes_namespace_v1" "app" {
+  metadata {
+    name = "aws-3tier-dev"
+    labels = {
+      project     = "aws-3tier"
+      environment = "dev"
+      managed-by  = "terraform"
+    }
+  }
+
+  depends_on = [module.eks]
+}
+
+# =========================================================
 # Kubernetes Secret — DB password injected securely into pods
 # =========================================================
 
 resource "kubernetes_secret_v1" "app_secrets" {
   metadata {
     name      = "aws-3tier-secrets"
-    namespace = "aws-3tier-dev"
+    namespace = kubernetes_namespace_v1.app.metadata[0].name
   }
 
   data = {
