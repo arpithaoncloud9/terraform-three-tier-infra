@@ -35,7 +35,7 @@ variable "alb_security_group_id" {
 variable "kubernetes_version" {
   description = "Kubernetes version for the EKS cluster."
   type        = string
-  default     = "1.29"
+  default     = "1.31"
 }
 
 variable "node_instance_type" {

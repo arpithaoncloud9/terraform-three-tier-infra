@@ -81,6 +81,14 @@ module "eks" {
   db_password            = var.db_password
 }
 
+# =========================================================
+# Register EKS nodes with ALB target group       
+# =========================================================
+
+resource "aws_autoscaling_attachment" "eks_to_alb" {
+  autoscaling_group_name = module.eks.node_group_asg_name
+  lb_target_group_arn    = module.alb.target_group_arn
+}
 
 # =========================================================
 # WEEK 5: Compute module replaced by EKS in Week 6
