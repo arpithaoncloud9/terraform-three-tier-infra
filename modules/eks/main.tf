@@ -183,6 +183,20 @@ resource "aws_security_group" "eks_nodes" {
 }
 
 # =========================================================
+# Allow ALB to reach EKS nodes on NodePort range
+# =========================================================
+
+resource "aws_security_group_rule" "cluster_nodeport" {
+  type                     = "ingress"
+  from_port                = 30000
+  to_port                  = 32767
+  protocol                 = "tcp"
+  source_security_group_id = var.alb_security_group_id
+  security_group_id        = aws_eks_cluster.this.vpc_config[0].cluster_security_group_id
+  description              = "Allow ALB to reach NodePort range on EKS managed SG"
+}
+
+# =========================================================
 # EKS Cluster
 # =========================================================
 
