@@ -46,7 +46,7 @@ spec:
             - name: AZ
               valueFrom:
                 fieldRef:
-                  fieldPath: metadata.labels['topology.kubernetes.io/zone']
+                  fieldPath: spec.nodeName
             - name: DB_HOST
               value: "aws-3tier-db.ch2zz9lqvp9c.us-east-1.rds.amazonaws.com"
             - name: DB_PORT

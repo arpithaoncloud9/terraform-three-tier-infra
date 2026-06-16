@@ -302,10 +302,11 @@ app.get('/', (req, res) => {
       <body>
         <div class="container">
           <h1>🚀 AWS 3-Tier Application</h1>
-          <p class="subtitle">Terraform + Docker + GitHub Actions + CloudWatch</p>
+          <p class="subtitle">Terraform + Docker + GitHub Actions + EKS + CloudWatch</p>
           
           <div class="badge">✨ Production Ready Infrastructure ✨</div>
           <div class="badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">👤 Deployed by Maria Arpitha</div>
+          <div class="badge" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); margin-top: 10px;">☸️ Running on Kubernetes (EKS)</div>
 
           <div class="info-grid">
             <div class="info-item">
@@ -322,7 +323,7 @@ app.get('/', (req, res) => {
             </div>
             <div class="info-item">
               <div class="info-label">Load Balancer</div>
-              <div class="info-value">✓ Behind ALB</div>
+              <div class="info-value">✓ EKS + ALB</div>
             </div>
           </div>
 
@@ -334,6 +335,7 @@ app.get('/', (req, res) => {
           <div class="tech-stack">
             <h3>🛠️ Technology Stack</h3>
             <ul class="tech-list">
+              <li>Amazon EKS (Kubernetes Orchestration)</li>
               <li>AWS EC2 with Auto Scaling</li>
               <li>Application Load Balancer</li>
               <li>Docker Containerization</li>
@@ -342,6 +344,8 @@ app.get('/', (req, res) => {
               <li>CloudWatch Monitoring & Logs</li>
               <li>Terraform Infrastructure as Code</li>
               <li>GitHub Actions CI/CD</li>
+              <li>Horizontal Pod Autoscaler (HPA)</li>
+              <li>Kubernetes Rolling Deployments</li>
             </ul>
           </div>
         </div>
