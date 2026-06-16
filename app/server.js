@@ -1,7 +1,38 @@
 const express = require('express');
 const AWS = require('aws-sdk');
+const http = require('http');
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// ============ Fetch AZ from EC2 Metadata ============
+async function getAZFromMetadata() {
+  return new Promise((resolve) => {
+    const tokenReq = http.request({
+      hostname: '169.254.169.254',
+      path: '/latest/api/token',
+      method: 'PUT',
+      headers: { 'X-aws-ec2-metadata-token-ttl-seconds': '21600' },
+      timeout: 2000
+    }, (res) => {
+      let token = '';
+      res.on('data', d => token += d);
+      res.on('end', () => {
+        http.get({
+          hostname: '169.254.169.254',
+          path: '/latest/meta-data/placement/availability-zone',
+          headers: { 'X-aws-ec2-metadata-token': token },
+          timeout: 2000
+        }, (r) => {
+          let az = '';
+          r.on('data', d => az += d);
+          r.on('end', () => resolve(az.trim()));
+        }).on('error', () => resolve(process.env.AZ || 'unknown'));
+      });
+    });
+    tokenReq.on('error', () => resolve(process.env.AZ || 'unknown'));
+    tokenReq.end();
+  });
+}
 
 // ============ CloudWatch Setup ============
 const cloudwatch = new AWS.CloudWatch({
@@ -196,7 +227,7 @@ app.use((req, res, next) => {
  */
 app.get('/', (req, res) => {
   const instanceId = process.env.INSTANCE_ID || 'unknown';
-  const az = process.env.AZ || 'unknown';
+  const az = app.locals.az || process.env.AZ || 'unknown';
   const environment = process.env.ENVIRONMENT || 'dev';
 
   res.send(`
@@ -416,10 +447,14 @@ app.use((err, req, res, next) => {
 
 // ============ Server Startup ============
 app.listen(PORT, async () => {
+  // Fetch real AZ from EC2 metadata
+  const realAZ = await getAZFromMetadata();
+  app.locals.az = realAZ;
+
   console.log(`\n${'='.repeat(60)}`);
   console.log(`[START] Server running on port ${PORT}`);
   console.log(`[INFO] Instance ID: ${process.env.INSTANCE_ID || 'unknown'}`);
-  console.log(`[INFO] Availability Zone: ${process.env.AZ || 'unknown'}`);
+  console.log(`[INFO] Availability Zone: ${realAZ}`);
   console.log(`[INFO] Environment: ${process.env.ENVIRONMENT || 'dev'}`);
   console.log(`[INFO] Region: ${process.env.AWS_REGION || 'us-east-1'}`);
   console.log(`${'='.repeat(60)}\n`);
@@ -432,14 +467,13 @@ app.listen(PORT, async () => {
     if (metrics.requestCount > 0) {
       await sendMetricsToCloudWatch();
     }
-  }, 60000);  // 60 seconds
+  }, 60000);
 });
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('\n[SHUTDOWN] Received SIGTERM, shutting down gracefully...');
 
-  // Send final metrics before shutdown
   if (metrics.requestCount > 0) {
     await sendMetricsToCloudWatch();
   }
