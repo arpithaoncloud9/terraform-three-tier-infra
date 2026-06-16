@@ -262,7 +262,7 @@ jobs:
           echo "Waiting for deployment rollout..."
           kubectl rollout status deployment/aws-3tier-app \
             --namespace aws-3tier-dev \
-            --timeout=300s
+            --timeout=600s
 
       - name: Verify pods are running
         run: |

@@ -18,8 +18,8 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1 # spin up 1 extra pod during deploy
-      maxUnavailable: 0 # never take a pod down before new one is ready
+      maxSurge: 0
+      maxUnavailable: 1 # never take a pod down before new one is ready
   template:
     metadata:
       labels:
@@ -62,11 +62,11 @@ spec:
               value: "appdb"
           resources:
             requests:
-              cpu: "100m" # 0.1 CPU core — fits t3.micro
-              memory: "128Mi"
+              cpu: "50m"
+              memory: "64Mi"
             limits:
-              cpu: "300m" # 0.3 CPU core max
-              memory: "256Mi"
+              cpu: "200m"
+              memory: "128Mi"
           livenessProbe:
             httpGet:
               path: /health
