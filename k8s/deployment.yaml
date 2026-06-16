@@ -42,10 +42,6 @@ spec:
             - name: INSTANCE_ID
               valueFrom:
                 fieldRef:
-                  fieldPath: spec.nodeName # node name as instance identifier
-            - name: AZ
-              valueFrom:
-                fieldRef:
                   fieldPath: spec.nodeName
             - name: DB_HOST
               value: "aws-3tier-db.ch2zz9lqvp9c.us-east-1.rds.amazonaws.com"
