@@ -786,3 +786,5 @@ Week 5 brought the entire 3‑tier application to a **production‑ready state**
 
 This week solidified the environment as a **stable, monitored, and scalable production setup**, ready to handle real traffic and future enhancements.
 --- 
+
+ ## Week 6: Migrated to Kubernetes — EKS Cluster with Auto Scaling, Rolling Deployments, and GitOps CI/CD 
