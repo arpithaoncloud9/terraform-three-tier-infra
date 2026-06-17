@@ -1008,6 +1008,6 @@ The full 6-week progression tells a complete cloud engineering story:
 Infrastructure as Code → CI/CD → Containers → Observability → Kubernetes.
 
 
-## Week2 To Week6 Architectural Diagram
+### week1 to week6 Architectural Diagram
 
 ![week1 To Week6 Architecture](docs/screenshots/architecture_week1_to_week6_hd.png)
