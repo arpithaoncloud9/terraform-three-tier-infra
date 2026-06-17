@@ -937,6 +937,7 @@ JOB 5: Deployment Summary
 ![Pull Request](docs/screenshots/week6-PR-merge.png)
 
 
+
 ![CI/CD Pipeline](docs/screenshots/week6-pipeline.png)
 
 
@@ -1008,10 +1009,10 @@ Infrastructure as Code → CI/CD → Containers → Observability → Kubernetes
 
 ## Week1 To Week6 Progression Diagram
 
-
 ![Full Progression Diagram](docs/screenshots/week1-to-week6-progression-diagram.png)
 
 
-## Week1 To Week6 Architectural Diagram
+
+## Week2 To Week6 Architectural Diagram
 
 ![week2 To Week6 Architecture](docs/screenshots/week2-to-week6-architecture.png)
