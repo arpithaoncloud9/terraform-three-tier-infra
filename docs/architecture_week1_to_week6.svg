@@ -1,0 +1,272 @@
+<svg viewBox="0 0 1000 1380" xmlns="http://www.w3.org/2000/svg" font-family="Arial, sans-serif">
+  <rect width="1000" height="1380" fill="#ffffff"/>
+  <rect x="0" y="0" width="1000" height="52" fill="#1a1a2e"/>
+  <text x="500" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="#ffffff">AWS 3-Tier Production Architecture — Week 1 to Week 6</text>
+  <text x="500" y="40" text-anchor="middle" font-size="11" fill="#a0aec0">Terraform · GitHub Actions · Docker · ECR · EKS · CloudWatch · RDS</text>
+
+  <rect x="0" y="56" width="1000" height="22" fill="#ede9fe"/>
+  <text x="12" y="71" font-size="10" font-weight="700" fill="#6b21a8">WEEK 2 — Remote State Management</text>
+
+  <rect x="60" y="84" width="180" height="64" rx="8" fill="#f3e8ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="150" y="104" text-anchor="middle" font-size="10" font-weight="700" fill="#6b21a8">S3 Bucket</text>
+  <text x="150" y="120" text-anchor="middle" font-size="9" fill="#4c1d95">terraform.tfstate</text>
+  <text x="150" y="134" text-anchor="middle" font-size="9" fill="#4c1d95">Versioning enabled</text>
+
+  <line x1="240" y1="116" x2="298" y2="116" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#arr-purple)"/>
+  <text x="270" y="110" text-anchor="middle" font-size="8" fill="#7c3aed">locks</text>
+
+  <rect x="300" y="84" width="180" height="64" rx="8" fill="#f3e8ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="390" y="104" text-anchor="middle" font-size="10" font-weight="700" fill="#6b21a8">DynamoDB Table</text>
+  <text x="390" y="120" text-anchor="middle" font-size="9" fill="#4c1d95">LockID partition key</text>
+  <text x="390" y="134" text-anchor="middle" font-size="9" fill="#4c1d95">Prevents concurrent apply</text>
+
+  <rect x="530" y="84" width="400" height="64" rx="8" fill="#faf5ff" stroke="#c4b5fd" stroke-width="1"/>
+  <text x="730" y="104" text-anchor="middle" font-size="10" font-weight="700" fill="#6b21a8">terraform init -migrate-state</text>
+  <text x="730" y="120" text-anchor="middle" font-size="9" fill="#4c1d95">State migrated from local to S3</text>
+  <text x="730" y="134" text-anchor="middle" font-size="9" fill="#4c1d95">Every apply acquires DynamoDB lock first</text>
+
+  <rect x="0" y="164" width="1000" height="22" fill="#dbeafe"/>
+  <text x="12" y="179" font-size="10" font-weight="700" fill="#1e40af">WEEK 3 + 4 — GitHub Actions CI/CD Pipeline · Docker · ECR</text>
+
+  <line x1="20" y1="192" x2="20" y2="272" stroke="#e5e7eb" stroke-width="1"/>
+  <text x="6" y="246" font-size="8" font-weight="700" fill="#9ca3af" transform="rotate(-90,6,246)">DEV</text>
+
+  <rect x="30" y="192" width="110" height="70" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="85" y="218" text-anchor="middle" font-size="10" font-weight="700" fill="#1e40af">Developer</text>
+  <text x="85" y="234" text-anchor="middle" font-size="8" fill="#1e40af">writes code</text>
+  <text x="85" y="248" text-anchor="middle" font-size="8" fill="#1e40af">git push + PR</text>
+
+  <line x1="140" y1="227" x2="166" y2="227" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arr-blue)"/>
+
+  <rect x="168" y="192" width="130" height="70" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="233" y="214" text-anchor="middle" font-size="10" font-weight="700" fill="#1e40af">GitHub</text>
+  <text x="233" y="228" text-anchor="middle" font-size="8" fill="#1e40af">Feature branch to PR</text>
+  <text x="233" y="242" text-anchor="middle" font-size="8" fill="#1e40af">Review + approval</text>
+  <text x="233" y="256" text-anchor="middle" font-size="8" fill="#1e40af">Merge to main</text>
+
+  <line x1="233" y1="262" x2="233" y2="288" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arr-blue)"/>
+  <text x="248" y="279" font-size="8" fill="#3b82f6">triggers</text>
+
+  <line x1="20" y1="272" x2="980" y2="272" stroke="#e5e7eb" stroke-dasharray="4,4" stroke-width="0.8"/>
+  <text x="6" y="370" font-size="8" font-weight="700" fill="#9ca3af" transform="rotate(-90,6,370)">CI/CD</text>
+  <line x1="20" y1="272" x2="20" y2="430" stroke="#e5e7eb" stroke-width="1"/>
+
+  <rect x="30" y="290" width="190" height="130" rx="8" fill="#fefce8" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="125" y="312" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">GitHub Actions</text>
+  <text x="125" y="328" text-anchor="middle" font-size="8" fill="#78350f">On Pull Request:</text>
+  <text x="125" y="341" text-anchor="middle" font-size="8" fill="#78350f">terraform fmt + validate + plan</text>
+  <text x="125" y="354" text-anchor="middle" font-size="8" fill="#78350f">Plan posted to PR comment</text>
+  <text x="125" y="370" text-anchor="middle" font-size="8" fill="#78350f">On Merge to main:</text>
+  <text x="125" y="383" text-anchor="middle" font-size="8" fill="#78350f">terraform apply (29 resources)</text>
+  <text x="125" y="396" text-anchor="middle" font-size="8" fill="#78350f">docker build + push to ECR</text>
+  <text x="125" y="409" text-anchor="middle" font-size="8" fill="#78350f">kubectl rollout deploy</text>
+
+  <line x1="220" y1="355" x2="266" y2="355" stroke="#ca8a04" stroke-width="1.5" marker-end="url(#arr-yellow)"/>
+
+  <rect x="268" y="290" width="160" height="130" rx="8" fill="#fefce8" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="348" y="312" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">Terraform</text>
+  <text x="348" y="328" text-anchor="middle" font-size="8" fill="#78350f">Modules:</text>
+  <text x="348" y="341" text-anchor="middle" font-size="8" fill="#78350f">vpc · alb · eks</text>
+  <text x="348" y="354" text-anchor="middle" font-size="8" fill="#78350f">database · monitoring</text>
+  <text x="348" y="370" text-anchor="middle" font-size="8" fill="#78350f">State stored in S3</text>
+  <text x="348" y="383" text-anchor="middle" font-size="8" fill="#78350f">Lock via DynamoDB</text>
+  <text x="348" y="396" text-anchor="middle" font-size="8" fill="#78350f">Zero manual infra</text>
+  <text x="348" y="409" text-anchor="middle" font-size="8" fill="#78350f">changes</text>
+
+  <line x1="428" y1="355" x2="466" y2="355" stroke="#ca8a04" stroke-width="1.5" marker-end="url(#arr-yellow)"/>
+
+  <rect x="468" y="290" width="150" height="130" rx="8" fill="#fefce8" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="543" y="312" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">Docker</text>
+  <text x="543" y="328" text-anchor="middle" font-size="8" fill="#78350f">Node.js app</text>
+  <text x="543" y="341" text-anchor="middle" font-size="8" fill="#78350f">docker build</text>
+  <text x="543" y="354" text-anchor="middle" font-size="8" fill="#78350f">tag: latest + git SHA</text>
+  <text x="543" y="370" text-anchor="middle" font-size="8" fill="#78350f">PORT 3000</text>
+  <text x="543" y="383" text-anchor="middle" font-size="8" fill="#78350f">/health endpoint</text>
+  <text x="543" y="396" text-anchor="middle" font-size="8" fill="#78350f">/metrics endpoint</text>
+
+  <line x1="618" y1="355" x2="656" y2="355" stroke="#ca8a04" stroke-width="1.5" marker-end="url(#arr-yellow)"/>
+
+  <rect x="658" y="290" width="150" height="130" rx="8" fill="#fefce8" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="733" y="312" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">AWS ECR</text>
+  <text x="733" y="328" text-anchor="middle" font-size="8" fill="#78350f">aws-3tier-app repo</text>
+  <text x="733" y="341" text-anchor="middle" font-size="8" fill="#78350f">Stores versioned</text>
+  <text x="733" y="354" text-anchor="middle" font-size="8" fill="#78350f">Docker images</text>
+  <text x="733" y="370" text-anchor="middle" font-size="8" fill="#78350f">Auth via IAM role</text>
+  <text x="733" y="383" text-anchor="middle" font-size="8" fill="#78350f">No stored credentials</text>
+
+  <line x1="808" y1="355" x2="846" y2="355" stroke="#ca8a04" stroke-width="1.5" marker-end="url(#arr-yellow)"/>
+
+  <rect x="848" y="290" width="130" height="130" rx="8" fill="#fefce8" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="913" y="312" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">kubectl deploy</text>
+  <text x="913" y="328" text-anchor="middle" font-size="8" fill="#78350f">apply manifests</text>
+  <text x="913" y="341" text-anchor="middle" font-size="8" fill="#78350f">rollout status</text>
+  <text x="913" y="354" text-anchor="middle" font-size="8" fill="#78350f">~30 sec deploy</text>
+  <text x="913" y="370" text-anchor="middle" font-size="8" fill="#78350f">zero downtime</text>
+  <text x="913" y="383" text-anchor="middle" font-size="8" fill="#78350f">rolling update</text>
+
+  <line x1="913" y1="420" x2="913" y2="446" stroke="#ca8a04" stroke-width="1.5" marker-end="url(#arr-yellow)"/>
+
+  <line x1="20" y1="430" x2="980" y2="430" stroke="#e5e7eb" stroke-dasharray="4,4" stroke-width="0.8"/>
+  <rect x="0" y="430" width="1000" height="22" fill="#dcfce7"/>
+  <text x="12" y="445" font-size="10" font-weight="700" fill="#065f46">WEEK 1 + 5 + 6 — AWS Infrastructure · VPC · EKS · ALB · RDS · CloudWatch</text>
+  <text x="6" y="720" font-size="8" font-weight="700" fill="#9ca3af" transform="rotate(-90,6,720)">AWS</text>
+  <line x1="20" y1="430" x2="20" y2="980" stroke="#e5e7eb" stroke-width="1"/>
+
+  <rect x="410" y="454" width="170" height="44" rx="8" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="495" y="472" text-anchor="middle" font-size="10" font-weight="700" fill="#334155">Internet / Users</text>
+  <text x="495" y="487" text-anchor="middle" font-size="8" fill="#475569">Browser traffic</text>
+
+  <line x1="495" y1="498" x2="495" y2="522" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-gray)"/>
+  <text x="510" y="515" font-size="8" fill="#64748b">HTTP port 80</text>
+
+  <rect x="30" y="522" width="940" height="622" rx="12" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="50" y="542" font-size="9" font-weight="700" fill="#15803d">VPC  10.0.0.0/16  —  us-east-1</text>
+
+  <rect x="50" y="550" width="900" height="110" rx="8" fill="#dcfce7" stroke="#86efac" stroke-width="1"/>
+  <text x="70" y="568" font-size="9" font-weight="700" fill="#166534">Public Subnets</text>
+
+  <rect x="300" y="574" width="390" height="70" rx="8" fill="#ffffff" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="495" y="596" text-anchor="middle" font-size="10" font-weight="700" fill="#15803d">Application Load Balancer (ALB)</text>
+  <text x="495" y="611" text-anchor="middle" font-size="8" fill="#166534">Public subnets · us-east-1a + us-east-1b · HTTP listener port 80</text>
+  <text x="495" y="625" text-anchor="middle" font-size="8" fill="#166534">Target group routes to NodePort 30080 · health check /health</text>
+
+  <line x1="495" y1="644" x2="495" y2="672" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arr-green)"/>
+  <text x="510" y="663" font-size="8" fill="#15803d">port 30080</text>
+
+  <rect x="50" y="674" width="900" height="342" rx="8" fill="#dbeafe" stroke="#93c5fd" stroke-width="1"/>
+  <text x="70" y="692" font-size="9" font-weight="700" fill="#1e40af">Private App Subnets</text>
+
+  <rect x="70" y="702" width="860" height="298" rx="10" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="500" y="722" text-anchor="middle" font-size="10" font-weight="700" fill="#1e40af">EKS Cluster — aws-3tier-dev-cluster  (Week 6)</text>
+  <text x="500" y="736" text-anchor="middle" font-size="8" fill="#1d4ed8">Kubernetes 1.31 · Managed control plane · IAM node roles · CloudWatch Container Insights</text>
+
+  <rect x="90" y="746" width="380" height="238" rx="8" fill="#ffffff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="280" y="766" text-anchor="middle" font-size="9" font-weight="700" fill="#4338ca">Node 1 — t3.micro  (us-east-1a)</text>
+
+  <rect x="110" y="778" width="340" height="80" rx="6" fill="#eef2ff" stroke="#818cf8" stroke-width="1"/>
+  <text x="280" y="798" text-anchor="middle" font-size="9" font-weight="700" fill="#4338ca">Pod — Node.js App</text>
+  <text x="280" y="813" text-anchor="middle" font-size="8" fill="#3730a3">ECR image · port 3000</text>
+  <text x="280" y="827" text-anchor="middle" font-size="8" fill="#3730a3">liveness + readiness probe /health</text>
+  <text x="280" y="841" text-anchor="middle" font-size="8" fill="#3730a3">env vars from Kubernetes Secret</text>
+
+  <text x="160" y="880" text-anchor="middle" font-size="8" font-weight="700" fill="#4338ca">Deployment</text>
+  <text x="160" y="892" text-anchor="middle" font-size="7" fill="#3730a3">2 replicas always</text>
+  <text x="160" y="904" text-anchor="middle" font-size="7" fill="#3730a3">RollingUpdate</text>
+  <text x="280" y="880" text-anchor="middle" font-size="8" font-weight="700" fill="#4338ca">HPA</text>
+  <text x="280" y="892" text-anchor="middle" font-size="7" fill="#3730a3">2 to 6 pods</text>
+  <text x="280" y="904" text-anchor="middle" font-size="7" fill="#3730a3">at 70% CPU</text>
+  <text x="400" y="880" text-anchor="middle" font-size="8" font-weight="700" fill="#4338ca">Service</text>
+  <text x="400" y="892" text-anchor="middle" font-size="7" fill="#3730a3">NodePort 30080</text>
+  <text x="400" y="904" text-anchor="middle" font-size="7" fill="#3730a3">routes to 3000</text>
+  <text x="160" y="926" text-anchor="middle" font-size="8" font-weight="700" fill="#4338ca">Secret</text>
+  <text x="160" y="938" text-anchor="middle" font-size="7" fill="#3730a3">DB password</text>
+  <text x="160" y="950" text-anchor="middle" font-size="7" fill="#3730a3">no plaintext</text>
+  <text x="340" y="926" text-anchor="middle" font-size="8" font-weight="700" fill="#4338ca">Namespace</text>
+  <text x="340" y="938" text-anchor="middle" font-size="7" fill="#3730a3">aws-3tier-dev</text>
+
+  <rect x="490" y="746" width="380" height="238" rx="8" fill="#ffffff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="680" y="766" text-anchor="middle" font-size="9" font-weight="700" fill="#4338ca">Node 2 — t3.micro  (us-east-1b)</text>
+
+  <rect x="510" y="778" width="340" height="80" rx="6" fill="#eef2ff" stroke="#818cf8" stroke-width="1"/>
+  <text x="680" y="798" text-anchor="middle" font-size="9" font-weight="700" fill="#4338ca">Pod — Node.js App</text>
+  <text x="680" y="813" text-anchor="middle" font-size="8" fill="#3730a3">ECR image · port 3000</text>
+  <text x="680" y="827" text-anchor="middle" font-size="8" fill="#3730a3">liveness + readiness probe /health</text>
+  <text x="680" y="841" text-anchor="middle" font-size="8" fill="#3730a3">env vars from Kubernetes Secret</text>
+
+  <text x="560" y="880" text-anchor="middle" font-size="8" font-weight="700" fill="#4338ca">IAM Node Role</text>
+  <text x="560" y="892" text-anchor="middle" font-size="7" fill="#3730a3">ECR pull access</text>
+  <text x="560" y="904" text-anchor="middle" font-size="7" fill="#3730a3">CloudWatch write</text>
+  <text x="680" y="880" text-anchor="middle" font-size="8" font-weight="700" fill="#4338ca">Security Group</text>
+  <text x="680" y="892" text-anchor="middle" font-size="7" fill="#3730a3">NodePort 30080</text>
+  <text x="680" y="904" text-anchor="middle" font-size="7" fill="#3730a3">from ALB only</text>
+  <text x="800" y="880" text-anchor="middle" font-size="8" font-weight="700" fill="#4338ca">Node Group</text>
+  <text x="800" y="892" text-anchor="middle" font-size="7" fill="#3730a3">min 2 / max 4</text>
+  <text x="800" y="904" text-anchor="middle" font-size="7" fill="#3730a3">nodes auto scale</text>
+  <text x="560" y="926" text-anchor="middle" font-size="8" font-weight="700" fill="#4338ca">ASG Attachment</text>
+  <text x="560" y="938" text-anchor="middle" font-size="7" fill="#3730a3">nodes registered</text>
+  <text x="560" y="950" text-anchor="middle" font-size="7" fill="#3730a3">to ALB target group</text>
+  <text x="760" y="926" text-anchor="middle" font-size="8" font-weight="700" fill="#4338ca">Container Insights</text>
+  <text x="760" y="938" text-anchor="middle" font-size="7" fill="#3730a3">pod-level metrics</text>
+  <text x="760" y="950" text-anchor="middle" font-size="7" fill="#3730a3">EKS observability</text>
+
+  <line x1="280" y1="984" x2="280" y2="1042" stroke="#16a34a" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arr-green)"/>
+  <line x1="680" y1="984" x2="680" y2="1042" stroke="#16a34a" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arr-green)"/>
+  <text x="178" y="1018" font-size="7" fill="#15803d">MySQL port 3306</text>
+  <text x="578" y="1018" font-size="7" fill="#15803d">MySQL port 3306</text>
+
+  <rect x="50" y="1040" width="900" height="90" rx="8" fill="#fef9c3" stroke="#fde047" stroke-width="1"/>
+  <text x="70" y="1058" font-size="9" font-weight="700" fill="#854d0e">Private DB Subnets</text>
+
+  <rect x="300" y="1062" width="390" height="54" rx="8" fill="#ffffff" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="495" y="1082" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">RDS MySQL (Multi-AZ)</text>
+  <text x="495" y="1098" text-anchor="middle" font-size="8" fill="#78350f">Isolated DB subnets · accessible only from EKS nodes · db.t3.micro</text>
+
+  <rect x="0" y="1152" width="1000" height="22" fill="#ffedd5"/>
+  <text x="12" y="1167" font-size="10" font-weight="700" fill="#c2410c">WEEK 5 — CloudWatch Monitoring + Observability</text>
+
+  <rect x="30" y="1180" width="178" height="80" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="119" y="1200" text-anchor="middle" font-size="10" font-weight="700" fill="#9a3412">CloudWatch Logs</text>
+  <text x="119" y="1216" text-anchor="middle" font-size="8" fill="#7c2d12">5 log streams</text>
+  <text x="119" y="1229" text-anchor="middle" font-size="8" fill="#7c2d12">system · app · container</text>
+  <text x="119" y="1242" text-anchor="middle" font-size="8" fill="#7c2d12">setup · real-time ingest</text>
+
+  <rect x="220" y="1180" width="190" height="80" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="315" y="1200" text-anchor="middle" font-size="10" font-weight="700" fill="#9a3412">CloudWatch Alarms</text>
+  <text x="315" y="1216" text-anchor="middle" font-size="8" fill="#7c2d12">6 alarms configured</text>
+  <text x="315" y="1229" text-anchor="middle" font-size="8" fill="#7c2d12">EC2 CPU · ALB latency</text>
+  <text x="315" y="1242" text-anchor="middle" font-size="8" fill="#7c2d12">RDS CPU · mem · DB conns</text>
+
+  <rect x="422" y="1180" width="170" height="80" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="507" y="1200" text-anchor="middle" font-size="10" font-weight="700" fill="#9a3412">SNS Topics</text>
+  <text x="507" y="1216" text-anchor="middle" font-size="8" fill="#7c2d12">critical alerts</text>
+  <text x="507" y="1229" text-anchor="middle" font-size="8" fill="#7c2d12">warning alerts</text>
+  <text x="507" y="1242" text-anchor="middle" font-size="8" fill="#7c2d12">email notifications</text>
+
+  <rect x="604" y="1180" width="180" height="80" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="694" y="1200" text-anchor="middle" font-size="10" font-weight="700" fill="#9a3412">CW Dashboard</text>
+  <text x="694" y="1216" text-anchor="middle" font-size="8" fill="#7c2d12">custom metrics</text>
+  <text x="694" y="1229" text-anchor="middle" font-size="8" fill="#7c2d12">request count · latency</text>
+  <text x="694" y="1242" text-anchor="middle" font-size="8" fill="#7c2d12">errors · EC2 · ALB · RDS</text>
+
+  <rect x="796" y="1180" width="174" height="80" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="883" y="1200" text-anchor="middle" font-size="10" font-weight="700" fill="#9a3412">Container Insights</text>
+  <text x="883" y="1216" text-anchor="middle" font-size="8" fill="#7c2d12">pod-level metrics</text>
+  <text x="883" y="1229" text-anchor="middle" font-size="8" fill="#7c2d12">node health</text>
+  <text x="883" y="1242" text-anchor="middle" font-size="8" fill="#7c2d12">EKS observability</text>
+
+  <rect x="0" y="1276" width="1000" height="104" fill="#f8fafc"/>
+  <line x1="0" y1="1276" x2="1000" y2="1276" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="500" y="1297" text-anchor="middle" font-size="10" font-weight="700" fill="#334155">Legend — 6-Week Progression</text>
+
+  <rect x="30" y="1310" width="12" height="12" rx="2" fill="#7c3aed"/>
+  <text x="48" y="1321" font-size="9" fill="#334155">Week 2: Remote State (S3 + DynamoDB)</text>
+  <rect x="240" y="1310" width="12" height="12" rx="2" fill="#ca8a04"/>
+  <text x="258" y="1321" font-size="9" fill="#334155">Week 3+4: CI/CD + Docker + ECR</text>
+  <rect x="440" y="1310" width="12" height="12" rx="2" fill="#16a34a"/>
+  <text x="458" y="1321" font-size="9" fill="#334155">Week 1: AWS 3-Tier Infra (VPC · ALB · RDS)</text>
+  <rect x="680" y="1310" width="12" height="12" rx="2" fill="#3b82f6"/>
+  <text x="698" y="1321" font-size="9" fill="#334155">Week 6: EKS Kubernetes</text>
+  <rect x="820" y="1310" width="12" height="12" rx="2" fill="#ea580c"/>
+  <text x="838" y="1321" font-size="9" fill="#334155">Week 5: CloudWatch</text>
+
+  <text x="500" y="1352" text-anchor="middle" font-size="9" fill="#64748b">IaC  to  Remote State  to  CI/CD  to  Containers  to  Observability  to  Kubernetes Orchestration</text>
+  <text x="500" y="1370" text-anchor="middle" font-size="9" font-weight="700" fill="#1e40af">Deployed by Maria Arpitha · github.com/arpithaoncloud9/terraform-three-tier-infra</text>
+
+  <defs>
+    <marker id="arr-purple" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#7c3aed"/>
+    </marker>
+    <marker id="arr-blue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#3b82f6"/>
+    </marker>
+    <marker id="arr-yellow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#ca8a04"/>
+    </marker>
+    <marker id="arr-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arr-gray" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+</svg>
