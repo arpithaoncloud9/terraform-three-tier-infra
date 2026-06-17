@@ -3,6 +3,9 @@
 # WEEK 1
 Production-style 3-tier AWS architecture provisioned end-to-end with Terraform — VPC, ALB, Auto Scaling Group, and RDS — using a modular, real-world layout.
 
+### Week 1 - Architecture Diagram:
+
+
 ![Architecture diagram](docs/architecture.svg)
 
 ---
@@ -181,6 +184,11 @@ MIT
 Terraform state is stored remotely in S3 with DynamoDB locking to support
 team collaboration and prevent state corruption.
 
+### Week 2 - Architecture
+
+
+![Week 2](docs/screenshots/week2_architecture.png)
+
 ## Why Remote State?
 
 By default, Terraform stores state locally in `terraform.tfstate`. This works
@@ -310,6 +318,12 @@ Developer pushes code to a feature branch
     GitHub Actions triggers:
       🚀 terraform apply        (29 resources created on AWS automatically)
 ```
+
+### Week 3 — CI/CD Pipeline Architecture:
+
+
+![Week 3](docs/screenshots/week3_architecture.png)
+
 
 ## Why It's Important
 
@@ -500,6 +514,12 @@ Step 9: Health checks pass
 Step 10: App Live!
 - ALB routes traffic → App running 🎉🎉
 
+### Week 4 — Docker + ECR Architecture:
+
+
+![Week 4](docs/screenshots/week4_architecture.png)
+
+
 
 # Issues Encountered & Solutions
 
@@ -668,6 +688,12 @@ CloudWatch alarms monitoring EC2, ALB, and RDS — covering CPU, memory, latency
 
 - **Deployment Summary**
     - Posts results to PR/commit
+
+
+### Week 5 — CloudWatch Monitoring Architecture:
+
+
+![Week 5](docs/screenshots/week5_architecture.png)
 
 
 
@@ -874,6 +900,13 @@ JOB 5: Deployment Summary
       └── posts summary comment on commit
 ```
 
+### Week 6 — EKS Kubernetes
+
+
+![Week 6](docs/screenshots/week6_architecture.png)
+
+
+
 ## 🖥️ Pod Boot Sequence
 
 1. Terraform provisions EKS cluster and node group
@@ -1008,6 +1041,7 @@ The full 6-week progression tells a complete cloud engineering story:
 Infrastructure as Code → CI/CD → Containers → Observability → Kubernetes.
 
 
-### week1 to week6 Architectural Diagram
+### week1 to week6 Complete Architectural Diagram👇 
+
 
 ![week1 To Week6 Architecture](docs/screenshots/architecture_week1_to_week6_hd.png)
