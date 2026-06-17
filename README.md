@@ -5,8 +5,7 @@ Production-style 3-tier AWS architecture provisioned end-to-end with Terraform â
 
 ### Week 1 - Architecture Diagram:
 
-
-![Architecture diagram](docs/architecture.svg)
+![Architecture diagram](docs/week1_architecture.svg)
 
 ---
 
