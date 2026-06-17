@@ -997,13 +997,21 @@ Week 6 completed the migration from EC2-based container hosting to Kubernetes or
 
 The full 6-week progression tells a complete cloud engineering story:
 
-▸ Week 1: Built it — 3-tier AWS architecture with Terraform
-▸ Week 2: Secured it — remote state with S3 + DynamoDB
-▸ Week 3: Automated it — GitHub Actions CI/CD pipeline
-▸ Week 4: Containerized it — Docker + ECR
-▸ Week 5: Monitored it — CloudWatch, alarms, dashboards
-▸ Week 6: Orchestrated it — EKS, HPA, rolling deployments
+- Week 1: Built it — 3-tier AWS architecture with Terraform
+- Week 2: Secured it — remote state with S3 + DynamoDB
+- Week 3: Automated it — GitHub Actions CI/CD pipeline
+- Week 4: Containerized it — Docker + ECR
+- Week 5: Monitored it — CloudWatch, alarms, dashboards
+- Week 6: Orchestrated it — EKS, HPA, rolling deployments
 
 Infrastructure as Code → CI/CD → Containers → Observability → Kubernetes.
 
+## Week1 To Week6 Progression Diagram
 
+
+![Full Progression Diagram](docs/screenshots/week1-to-week6-progression-diagram.png)
+
+
+## Week1 To Week6 Architectural Diagram
+
+![week2 To Week6 Architecture](docs/screenshots/week2-to-week6-architecture.png)
