@@ -787,4 +787,215 @@ Week 5 brought the entire 3‑tier application to a **production‑ready state**
 This week solidified the environment as a **stable, monitored, and scalable production setup**, ready to handle real traffic and future enhancements.
 --- 
 
- ## Week 6: Migrated to Kubernetes — EKS Cluster with Auto Scaling, Rolling Deployments, and GitOps CI/CD 
+ # Week 6: Migrated to Kubernetes — EKS Cluster, Rolling Deployments, and GitOps CI/CD 🚀
+
+## 📋 Overview
+In Week 6, I migrated the entire application from EC2/ASG to Amazon EKS (Elastic Kubernetes Service), completing the journey from raw infrastructure to fully orchestrated container workloads. Building on Weeks 1–5, this phase focused on container orchestration, zero-downtime deployments, and Kubernetes-native auto scaling.
+
+## ✅ Key Achievements
+
+- Provisioned a production-grade EKS cluster with Terraform across us-east-1a and us-east-1b
+- Replaced EC2 Auto Scaling Group with Kubernetes Deployment (2 pods, always running)
+- Configured Horizontal Pod Autoscaler (HPA) — scales pods from 2 to 6 at 70% CPU
+- Registered EKS nodes with ALB target group on NodePort 30080
+- Injected DB credentials securely via Kubernetes Secret (no plaintext in manifests)
+- Updated CI/CD pipeline — replaced instance-refresh with kubectl rollout (~30 second deploys)
+- Validated multi-AZ pod distribution — pods running across us-east-1a and us-east-1b
+- Debugged and resolved multiple EKS networking and security group issues
+
+## 🏗️ What I Implemented
+
+### EKS Cluster Architecture
+
+- Managed EKS control plane provisioned via Terraform
+- Node group with 2x t3.micro EC2 instances in private subnets
+- Kubernetes namespace `aws-3tier-dev` for logical isolation
+- IAM roles for cluster and node group with least-privilege permissions
+- CloudWatch Container Insights for pod-level observability
+
+### Kubernetes Resources
+
+| Resource | Purpose |
+|---|---|
+| Namespace | Isolated environment `aws-3tier-dev` |
+| Deployment | Keeps 2 pods running always, rolling update strategy |
+| Service | Exposes pods to ALB on NodePort 30080 |
+| HPA | Auto scales pods 2→6 based on CPU utilization |
+| Secret | Injects DB password securely into pods |
+
+### Security
+
+- EKS nodes in private subnets — no public IP
+- ALB security group allows only port 80 from internet
+- NodePort rule added directly to EKS-managed security group
+- DB credentials stored in Kubernetes Secret, never in YAML
+- IAM roles handle ECR authentication — no stored credentials
+
+## 🚀 Deployment Pipeline (End-to-End)
+
+```
+Push to main
+      │
+      ▼
+JOB 1: Terraform Apply
+      ├── Provisions VPC (if not exists)
+      ├── Provisions ALB (if not exists)
+      ├── Provisions EKS cluster (~12 mins first time)
+      ├── Provisions EKS node group (2x t3.micro)
+      ├── Creates Kubernetes namespace + secret
+      ├── Provisions RDS (if not exists)
+      └── Provisions CloudWatch monitoring
+      │
+      ▼
+JOB 2: Docker Build + ECR Push
+      ├── docker build
+      ├── docker tag with git SHA
+      └── docker push to ECR (latest + SHA tag)
+      │
+      ▼
+JOB 3: kubectl Deploy
+      ├── aws eks update-kubeconfig
+      ├── kubectl apply deployment, service, hpa
+      └── kubectl rollout status (~30 seconds)
+      │
+      ▼
+JOB 4: Health Check
+      ├── wait 30 seconds for pods to stabilize
+      ├── curl http://<alb-dns>/health until 200 OK
+      └── test /, /health, /metrics endpoints
+      │
+      ▼
+JOB 5: Deployment Summary
+      └── posts summary comment on commit
+```
+
+## 🖥️ Pod Boot Sequence
+
+1. Terraform provisions EKS cluster and node group
+2. Kubernetes schedules pods on nodes across AZs
+3. Nodes pull Docker image from ECR using IAM role
+4. Pod starts — Node.js app listens on port 3000
+5. Readiness probe hits `/health` — pod marked Ready
+6. Service routes traffic from NodePort 30080 → pod port 3000
+7. ALB forwards requests to healthy nodes on port 30080
+8. App responds with HEALTHY status
+
+## 📊 Week 6 vs Week 5 Comparison
+
+| | Week 5 (EC2/ASG) | Week 6 (EKS) |
+|---|---|---|
+| Compute | EC2 instances | Kubernetes pods |
+| Deploy time | 5–10 minutes | ~30 seconds |
+| Self healing | ASG replaces EC2 (minutes) | K8s restarts pod (seconds) |
+| Scaling | Scale EC2 instances | Scale pods via HPA |
+| Deploy method | Instance refresh | kubectl rollout |
+| Credentials | Shell script env vars | Kubernetes Secrets |
+| Boot sequence | user_data shell script | Container image |
+
+## 🏭 Production State
+
+- Application responding HEALTHY on EKS
+- 2 pods running across us-east-1a and us-east-1b
+- HPA active — min 2 / max 6 pods at 70% CPU
+- ALB routing traffic to both nodes on port 30080
+- RDS connectivity verified from pods
+- CloudWatch monitoring active
+- Zero-downtime rolling deployments verified
+
+## 📊 Final Results
+- 2/2 EKS nodes Ready
+- 2/2 pods Running
+- 2/2 ALB targets healthy on port 30080
+- HPA configured (min 2 / max 6 replicas)
+- Rolling deploy completed in ~30 seconds
+- Application fully operational on Kubernetes
+
+## 📸 Screenshots
+
+### EKS Cluster Active
+
+![EKS Cluster](docs/screenshots/week6-eks-cluster.png)
+
+
+### EKS Node Group & Both Pods Running Across AZs
+
+![EKS Cluster Node](docs/screenshots/week6-eks-node-groups.png)
+
+
+### ALB Targets Healthy on Port 30080
+
+![ALB Targets](docs/screenshots/week6-alb-targets.png)
+
+
+### CI/CD Pipeline — All Jobs Green
+
+![CI/CD Pipeline](docs/screenshots/week6-pipeline.png)
+
+
+### Application HEALTHY on EKS
+
+| | |
+|:---:|:---:|
+| ![Pod in AZ-1a](docs/screenshots/week6-alb-dns-node-1a.png) | ![Pod in AZ-1b](docs/screenshots/week6-alb-dns-node-1b.png) |
+| Pod in us-east-1a | Pod in us-east-1b |
+
+
+### CI/CD Pipeline — All Jobs Green
+
+![Cloudwatch Logs](docs/screenshots/week6-cluster-log-group.png)
+
+
+## 🔍 Issues I Solved & Lessons Learned (Week 6)
+
+**Kubernetes namespace not found:**
+- Terraform tried to create the secret before the namespace existed.
+- Fix: Created namespace via `kubernetes_namespace_v1` in Terraform before the secret.
+- Lesson: Resource ordering matters — use `depends_on` explicitly.
+
+**ALB target group 0 registered targets:**
+- EKS nodes were not registered with the ALB target group.
+- Fix: Added `aws_autoscaling_attachment` to register EKS node group ASG with ALB.
+- Lesson: EKS doesn't auto-register nodes with existing ALBs — must wire explicitly.
+
+**ALB health checks timing out:**
+- Port mismatch — ALB target group was on port 80, nodes expose port 30080.
+- Fix: Updated target group port to 30080 and health check path to `/health`.
+- Lesson: ALB port must match the NodePort defined in the Kubernetes Service.
+
+**EKS managed security group not updated:**
+- Our custom security group had the right rules but EKS attached its own managed SG to nodes.
+- Fix: Added `aws_security_group_rule` directly to `cluster_security_group_id`.
+- Lesson: EKS manages its own SG — always add rules to the cluster SG, not a custom one.
+
+**Rolling deploy timeout on t3.micro:**
+- `maxSurge: 1` tried to run 3 pods on 2 tiny nodes simultaneously — not enough resources.
+- Fix: Changed to `maxSurge: 0, maxUnavailable: 1` and reduced resource requests.
+- Lesson: Rolling update strategy must match available node capacity.
+
+**AZ showing unknown in app:**
+- `fieldRef` cannot read node labels like `topology.kubernetes.io/zone`.
+- Fix: Fetched AZ directly from EC2 metadata API in `server.js` at startup.
+- Lesson: Use EC2 metadata API for instance-level info inside pods.
+
+**k8s manifests in wrong directory:**
+- `k8s/` folder was accidentally created inside `modules/` instead of repo root.
+- Fix: Moved to root with `mv modules/k8s ./k8s`.
+- Lesson: CI/CD runner uses repo root — always verify file paths match workflow commands.
+
+
+## 🔚 Conclusion
+
+Week 6 completed the migration from EC2-based container hosting to Kubernetes orchestration. The same Node.js application that started on raw EC2 instances in Week 1 now runs as Kubernetes pods with automatic scheduling, self-healing, rolling deployments, and pod-level auto scaling.
+
+The full 6-week progression tells a complete cloud engineering story:
+
+▸ Week 1: Built it — 3-tier AWS architecture with Terraform
+▸ Week 2: Secured it — remote state with S3 + DynamoDB
+▸ Week 3: Automated it — GitHub Actions CI/CD pipeline
+▸ Week 4: Containerized it — Docker + ECR
+▸ Week 5: Monitored it — CloudWatch, alarms, dashboards
+▸ Week 6: Orchestrated it — EKS, HPA, rolling deployments
+
+Infrastructure as Code → CI/CD → Containers → Observability → Kubernetes.
+
+
