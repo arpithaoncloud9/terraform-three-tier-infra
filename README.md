@@ -782,11 +782,16 @@ Pull request merged after fixing GitHub token permissions for posting deployment
 
 ## 🔚 Conclusion
 
-Week 5 brought the entire 3‑tier application to a **production‑ready state**, backed by full observability, automated scaling, and a reliable CI/CD pipeline. With CloudWatch monitoring, custom metrics, alarms, and real‑time log streaming in place, the system can now detect issues early, self‑heal through auto‑scaling, and support continuous deployments with zero downtime.
+Week 5 brought the entire 3‑tier application to a production‑ready state, backed by full observability, automated scaling, and a reliable CI/CD pipeline. 
+With CloudWatch monitoring, custom metrics, alarms, and real‑time log streaming in place, the system can now detect issues early, self‑heal through auto‑scaling, and support continuous deployments with zero downtime.
 
-This week solidified the environment as a **stable, monitored, and scalable production setup**, ready to handle real traffic and future enhancements.
+This week solidified the environment as a stable, monitored, and scalable production setup, ready to handle real traffic and future enhancements.
+
+
 --- 
 
+ 
+ 
  # Week 6: Migrated to Kubernetes — EKS Cluster, Rolling Deployments, and GitOps CI/CD 🚀
 
 ## 📋 Overview
@@ -917,17 +922,20 @@ JOB 5: Deployment Summary
 ![EKS Cluster](docs/screenshots/week6-eks-cluster.png)
 
 
-### EKS Node Group & Both Pods Running Across AZs
+### EKS Nodes & Node Group 
 
 ![EKS Cluster Node](docs/screenshots/week6-eks-node-groups.png)
 
 
 ### ALB Targets Healthy on Port 30080
 
-![ALB Targets](docs/screenshots/week6-alb-targets.png)
+![ALB Targets](docs/screenshots/week6-alb-healthy-targets.png)
 
 
 ### CI/CD Pipeline — All Jobs Green
+
+![Pull Request](docs/screenshots/week6-PR-merge.png)
+
 
 ![CI/CD Pipeline](docs/screenshots/week6-pipeline.png)
 
@@ -940,7 +948,7 @@ JOB 5: Deployment Summary
 | Pod in us-east-1a | Pod in us-east-1b |
 
 
-### CI/CD Pipeline — All Jobs Green
+### EKS Cluster Cloudwatch Log Group
 
 ![Cloudwatch Logs](docs/screenshots/week6-cluster-log-group.png)
 
