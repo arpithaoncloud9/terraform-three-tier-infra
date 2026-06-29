@@ -128,6 +128,25 @@ resource "kubernetes_namespace_v1" "app" {
 }
 
 # =========================================================
+# IRSA - Kubernetes Service Account
+# =========================================================
+
+resource "kubernetes_service_account_v1" "app" {
+  metadata {
+    name      = "app-service-account"
+    namespace = kubernetes_namespace_v1.app.metadata[0].name
+    annotations = {
+      "eks.amazonaws.com/role-arn" = module.eks.irsa_role_arn
+    }
+  }
+
+  depends_on = [
+    kubernetes_namespace_v1.app,
+    module.eks
+  ]
+}
+
+# =========================================================
 # Kubernetes Secret — DB password injected securely into pods
 # =========================================================
 

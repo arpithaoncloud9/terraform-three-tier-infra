@@ -36,3 +36,13 @@ output "node_group_asg_name" {
   description = "Auto Scaling Group name backing the EKS node group."
   value       = aws_eks_node_group.app.resources[0].autoscaling_groups[0].name
 }
+
+output "irsa_role_arn" {
+  description = "IAM role ARN for IRSA - used by Kubernetes service account."
+  value       = aws_iam_role.app_irsa.arn
+}
+
+output "oidc_provider_arn" {
+  description = "OIDC provider ARN for IRSA."
+  value       = aws_iam_openid_connect_provider.eks.arn
+}

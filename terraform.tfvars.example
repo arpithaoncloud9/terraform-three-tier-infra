@@ -21,13 +21,7 @@ asg_min_size         = 2
 asg_max_size         = 4
 asg_desired_capacity = 2
 
-# Database
-db_engine         = "mysql"
-db_engine_version = "8.0"
-db_instance_class = "db.t3.micro"
-db_name           = "appdb"
-db_username       = "admin"
-db_password       = "CHANGE_ME_STRONG_PASSWORD"
+
 
 # Free Plan accounts must keep these as defaults
 multi_az                = false
